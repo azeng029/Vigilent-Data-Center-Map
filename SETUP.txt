@@ -1,0 +1,93 @@
+VIGILENT DATA CENTER SCORING & OPTIMIZATION TOOL
+=================================================
+
+HOW TO DOWNLOAD AND RUN
+-----------------------
+
+STEP 1: Download the files
+    - Click the green "Code" button on the GitHub repo page
+    - Click "Download ZIP"
+    - Unzip the folder somewhere on your computer (e.g., your Desktop)
+
+STEP 2: Install Python (if you don't have it)
+    - Go to https://www.python.org/downloads/
+    - Download and install Python 3.10 or newer
+    - During install, CHECK the box that says "Add Python to PATH"
+
+STEP 3: Install dependencies
+    - Open Terminal (Mac) or Command Prompt (Windows)
+    - Navigate to the Vigilent folder:
+
+        cd path/to/Vigilent
+
+      For example, if you unzipped to your Desktop:
+
+        Mac:     cd ~/Desktop/Vigilent
+        Windows: cd C:\Users\YourName\Desktop\Vigilent
+
+    - Run this command to install the required packages:
+
+        pip install dash plotly python-pptx numpy requests openpyxl
+
+STEP 4: Run the app
+    - In the same terminal, run:
+
+        python simulation.py
+
+    - You should see output like:
+
+        ============================================================
+          VIGILENT SWEET SPOT SIMULATOR + OPTIMIZER
+          Open http://127.0.0.1:8050 in your browser
+        ============================================================
+
+STEP 5: Open in your browser
+    - Open any web browser (Chrome, Safari, Firefox, etc.)
+    - Go to: http://127.0.0.1:8050
+
+    That's it! You should see the Vigilent dashboard.
+
+STEP 6: Stop the app
+    - Go back to the terminal and press Ctrl+C
+
+
+WHAT EACH TAB DOES
+------------------
+
+1. SIMULATOR
+   Interactive heatmap that sweeps two DC parameters at a time.
+   Adjust sliders to see how the composite score changes.
+
+2. OPTIMIZER
+   Finds the single optimal data center profile. Runs sensitivity
+   analysis showing how each parameter affects the score.
+
+3. EJ CALCULATOR
+   Environmental Justice impact analysis. Enter a zip code to see
+   how Vigilent helps de-marginalize communities burdened by high
+   energy costs and pollution.
+
+4. DC FINDER
+   Sweeps ALL 5 DC parameters simultaneously (759,000+ combinations)
+   to find every data center profile that scores above your threshold.
+   Shows target ranges and tradeoff heatmaps between any two parameters.
+
+
+TROUBLESHOOTING
+---------------
+
+"ModuleNotFoundError: No module named 'dash'"
+    -> Run: pip install dash plotly python-pptx numpy requests openpyxl
+
+"Address already in use"
+    -> Another instance is running. Kill it first:
+       Mac/Linux: pkill -f simulation.py
+       Windows:   Close the other terminal window
+
+"python: command not found"
+    -> Try using "python3" instead of "python"
+    -> Or reinstall Python and make sure "Add to PATH" is checked
+
+App loads but looks broken
+    -> Make sure all 3 Python files are in the same folder:
+       simulation.py, vigilent_engine.py, vigilent_optimizer.py

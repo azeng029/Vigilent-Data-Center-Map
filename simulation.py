@@ -22,6 +22,7 @@ from vigilent_engine import (
     DC_PARAMS, VIGILENT_PARAMS, SCORING_CONFIG,
     compute_score, compute_score_grid, lookup_electricity_rate,
     compute_ej_impact, resolve_location,
+    compute_exhaustive_sweep, extract_target_ranges, compute_pairwise_tradeoff,
     EGRID_CO2_LBS_PER_MWH, EGRID_FUEL_MIX,
     NATIONAL_AVG_ENERGY_BURDEN, NATIONAL_AVG_WATER_BILL,
     NATIONAL_AVG_POVERTY_RATE, NATIONAL_AVG_POC_PCT,
@@ -852,6 +853,106 @@ ej_content = html.Div([
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# DC FINDER TAB LAYOUT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FINDER_TEAL = "#0097A7"
+
+# Param pair options for tradeoff explorer
+_FINDER_PAIR_OPTIONS = [
+    {"label": DC_PARAMS[k]["label"], "value": k}
+    for k in DC_PARAMS
+]
+
+def _make_finder_vig_control(param_key, meta):
+    """Create a labeled input for a Vigilent parameter on the DC Finder tab."""
+    display_mult = meta.get("display_mult", 1)
+    mn = meta["min"] * display_mult
+    mx = meta["max"] * display_mult
+    default = meta["default"] * display_mult
+    step = meta.get("step", 0.01) * display_mult
+    return html.Div([
+        html.Label(meta["label"], style={"fontWeight": "600", "fontSize": "13px",
+                                          "marginBottom": "4px", "display": "block",
+                                          "whiteSpace": "nowrap", "overflow": "hidden",
+                                          "textOverflow": "ellipsis"}),
+        dcc.Input(
+            id=f"finder-vig-{param_key}",
+            type="number",
+            value=default,
+            min=mn, max=mx, step=step,
+            style={"width": "100%", "padding": "8px", "border": "1px solid #ccc",
+                   "borderRadius": "6px", "fontSize": "14px", "boxSizing": "border-box"},
+            debounce=True,
+        ),
+    ], style={"flex": "1 1 calc(25% - 12px)", "minWidth": "140px"})
+
+
+finder_content = html.Div([
+    html.Div([
+        # --- Intro ---
+        html.H2("DC Finder",
+                 style={"margin": "0 0 4px 0", "color": "#1b285b", "fontSize": "22px"}),
+        html.P("Find all data center profiles that benefit most from Vigilent. "
+               "Unlike the Simulator (which holds some variables constant), the DC Finder "
+               "sweeps all 5 DC parameters simultaneously to find every qualifying combination.",
+               style={"fontSize": "14px", "color": "#666", "lineHeight": "1.6",
+                      "margin": "0 0 20px 0"}),
+
+        # --- Input section ---
+        html.Div([
+            html.H3("Vigilent Parameters",
+                     style={"marginTop": "0", "marginBottom": "14px"}),
+            html.Div([
+                _make_finder_vig_control(k, VIGILENT_PARAMS[k])
+                for k in VIGILENT_PARAMS
+            ], style={"display": "flex", "flexWrap": "wrap", "gap": "14px",
+                      "marginBottom": "20px"}),
+
+            # Threshold selector
+            html.Div([
+                html.Label("Score Threshold",
+                           style={"fontWeight": "600", "fontSize": "13px",
+                                  "marginBottom": "4px", "display": "block"}),
+                dcc.Dropdown(
+                    id="finder-threshold",
+                    options=[
+                        {"label": "50 — Moderate", "value": 50},
+                        {"label": "75 — Good", "value": 75},
+                        {"label": "90 — Excellent", "value": 90},
+                    ],
+                    value=75,
+                    clearable=False,
+                    style={"width": "220px", "fontSize": "14px"},
+                ),
+            ], style={"marginBottom": "20px"}),
+
+            html.Button(
+                "Find Matching DCs",
+                id="finder-run-btn",
+                style={"padding": "12px 32px", "backgroundColor": FINDER_TEAL,
+                       "color": "white", "border": "none", "borderRadius": "8px",
+                       "cursor": "pointer", "fontSize": "15px", "fontWeight": "600",
+                       "boxShadow": "0 2px 8px rgba(0,151,167,0.3)"},
+            ),
+            html.Div(id="finder-status",
+                     style={"marginTop": "10px", "fontSize": "13px", "color": "#666"}),
+        ], className="opt-section"),
+
+        # --- Results area ---
+        html.Div(id="finder-results",
+                 style={"marginTop": "20px"}),
+
+        # Store for the 5D composite array (serialized as list)
+        dcc.Store(id="finder-composite-store", data=None),
+        dcc.Store(id="finder-grids-store", data=None),
+        dcc.Store(id="finder-threshold-store", data=None),
+
+    ], style={"padding": "24px 40px", "maxWidth": "1400px", "margin": "0 auto"}),
+], style={"flex": "1", "overflowY": "auto", "background": "#f5f6fa", "width": "100%"})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # FULL APP LAYOUT
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -877,6 +978,8 @@ app.layout = html.Div([
                      n_clicks=0),
         html.Button("EJ Calculator", id="tab-ej-btn", className="tab-btn",
                      n_clicks=0),
+        html.Button("DC Finder", id="tab-finder-btn", className="tab-btn",
+                     n_clicks=0),
     ], className="tab-bar"),
 
     # Tab content
@@ -901,20 +1004,24 @@ app.layout = html.Div([
     Output("tab-sim-btn", "className"),
     Output("tab-opt-btn", "className"),
     Output("tab-ej-btn", "className"),
+    Output("tab-finder-btn", "className"),
     Output("active-tab", "data"),
     Input("tab-sim-btn", "n_clicks"),
     Input("tab-opt-btn", "n_clicks"),
     Input("tab-ej-btn", "n_clicks"),
+    Input("tab-finder-btn", "n_clicks"),
     State("active-tab", "data"),
 )
-def switch_tab(sim_clicks, opt_clicks, ej_clicks, current_tab):
+def switch_tab(sim_clicks, opt_clicks, ej_clicks, finder_clicks, current_tab):
     triggered = ctx.triggered_id
     if triggered == "tab-opt-btn":
-        return optimizer_content, "tab-btn", "tab-btn active", "tab-btn", "optimizer"
+        return optimizer_content, "tab-btn", "tab-btn active", "tab-btn", "tab-btn", "optimizer"
     if triggered == "tab-ej-btn":
-        return ej_content, "tab-btn", "tab-btn", "tab-btn active", "ej"
+        return ej_content, "tab-btn", "tab-btn", "tab-btn active", "tab-btn", "ej"
+    if triggered == "tab-finder-btn":
+        return finder_content, "tab-btn", "tab-btn", "tab-btn", "tab-btn active", "finder"
     # Default to simulator
-    return simulator_content, "tab-btn active", "tab-btn", "tab-btn", "simulator"
+    return simulator_content, "tab-btn active", "tab-btn", "tab-btn", "tab-btn", "simulator"
 
 
 # --- 1. Ensure X and Y axes are never the same ---
@@ -2247,6 +2354,303 @@ def run_ej_calculator(n_clicks, zip_code, dc_size, pue, growth_pct, energy_red_p
         style={"color": EJ_TEAL, "fontWeight": "600"})
 
     return results_layout, status
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DC FINDER CALLBACKS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_FINDER_PARAM_LABELS = {
+    "dc_size_mw": "DC Size (MW)",
+    "baseline_pue": "Baseline PUE",
+    "electricity_price": "Electricity Price ($/kWh)",
+    "load_growth_rate": "Load Growth Rate (%)",
+    "energy_pct_opex": "Energy % of OPEX",
+}
+
+_FINDER_PARAM_FMT = {
+    "dc_size_mw": (".0f", "MW", 1),
+    "baseline_pue": (".2f", "", 1),
+    "electricity_price": (".2f", "$/kWh", 1),
+    "load_growth_rate": (".0f", "%", 100),
+    "energy_pct_opex": (".0f", "%", 100),
+}
+
+
+@callback(
+    Output("finder-results", "children"),
+    Output("finder-status", "children"),
+    Output("finder-composite-store", "data"),
+    Output("finder-grids-store", "data"),
+    Output("finder-threshold-store", "data"),
+    Input("finder-run-btn", "n_clicks"),
+    State("finder-vig-num_years", "value"),
+    State("finder-vig-investment_cost", "value"),
+    State("finder-vig-energy_reduction_pct", "value"),
+    State("finder-vig-water_reduction_pct", "value"),
+    State("finder-threshold", "value"),
+    prevent_initial_call=True,
+)
+def run_finder(n_clicks, num_years, investment, energy_red, water_red, threshold):
+    if not n_clicks:
+        return no_update, no_update, no_update, no_update, no_update
+
+    # Convert display values to raw
+    e_red = (energy_red or 10) / 100
+    w_red = (water_red or 5) / 100
+    inv = investment or 1_500_000
+    threshold = threshold or 75
+
+    vigilent_params = {
+        "investment_cost": inv,
+        "energy_reduction_pct": e_red,
+        "water_reduction_pct": w_red,
+    }
+
+    # Run exhaustive sweep
+    composite, grids = compute_exhaustive_sweep(vigilent_params, steps=15)
+    ranges, feasibility, total_passing, total_combos = extract_target_ranges(
+        composite, grids, threshold)
+
+    # --- Build results layout ---
+
+    # 1. Summary card
+    zone_color = "#25ac01" if threshold >= 90 else (BRAND if threshold >= 75 else "#88b4f2")
+    zone_label = "Excellent" if threshold >= 90 else ("Good" if threshold >= 75 else "Moderate")
+
+    summary_card = html.Div([
+        html.Div([
+            html.Span(f"{feasibility:.1f}%",
+                      style={"fontSize": "48px", "fontWeight": "700",
+                             "color": zone_color, "lineHeight": "1"}),
+            html.Span(f" of all DC profiles score {chr(8805)} {threshold}",
+                      style={"fontSize": "18px", "color": "#444", "marginLeft": "12px"}),
+        ]),
+        html.P(f"{total_passing:,} of {total_combos:,} parameter combinations tested",
+               style={"fontSize": "13px", "color": "#888", "marginTop": "4px"}),
+    ], style={"padding": "24px", "background": "white", "borderRadius": "12px",
+              "boxShadow": "0 2px 12px rgba(0,0,0,0.06)", "marginBottom": "20px"})
+
+    # 2. Ranges table
+    table_rows = []
+    for param_key in ["dc_size_mw", "baseline_pue", "electricity_price",
+                       "load_growth_rate", "energy_pct_opex"]:
+        r = ranges[param_key]
+        fmt, unit, mult = _FINDER_PARAM_FMT[param_key]
+        label = _FINDER_PARAM_LABELS[param_key]
+        pct = r["pct_of_range"]
+
+        if r["min"] is not None:
+            mn_str = format(r["min"] * mult, fmt)
+            mx_str = format(r["max"] * mult, fmt)
+            if unit:
+                mn_str += f" {unit}"
+                mx_str += f" {unit}"
+        else:
+            mn_str = mx_str = "—"
+
+        # Flexibility label
+        if pct >= 95:
+            flex_label = "Any"
+            flex_color = "#25ac01"
+        elif pct >= 60:
+            flex_label = f"{pct:.0f}%"
+            flex_color = "#25ac01"
+        elif pct >= 30:
+            flex_label = f"{pct:.0f}%"
+            flex_color = "#FF8C00"
+        elif pct > 0:
+            flex_label = f"{pct:.0f}%"
+            flex_color = "#c00"
+        else:
+            flex_label = "None"
+            flex_color = "#c00"
+
+        # Flexibility bar
+        bar = html.Div([
+            html.Div(style={"width": f"{min(pct, 100):.0f}%", "height": "100%",
+                            "backgroundColor": flex_color, "borderRadius": "4px",
+                            "transition": "width 0.3s"}),
+        ], style={"width": "80px", "height": "8px", "backgroundColor": "#e8e8e8",
+                  "borderRadius": "4px", "display": "inline-block",
+                  "verticalAlign": "middle", "marginRight": "8px"})
+
+        table_rows.append(html.Tr([
+            html.Td(label, style={"padding": "10px 14px", "fontSize": "14px",
+                                   "fontWeight": "500", "whiteSpace": "nowrap"}),
+            html.Td(mn_str, style={"padding": "10px 14px", "fontSize": "14px",
+                                    "textAlign": "center", "fontFamily": "monospace"}),
+            html.Td(mx_str, style={"padding": "10px 14px", "fontSize": "14px",
+                                    "textAlign": "center", "fontFamily": "monospace"}),
+            html.Td([bar, html.Span(flex_label, style={"fontSize": "13px",
+                                                         "fontWeight": "600",
+                                                         "color": flex_color})],
+                    style={"padding": "10px 14px"}),
+        ]))
+
+    ranges_table = html.Div([
+        html.H3("Target DC Ranges",
+                 style={"marginTop": "0", "marginBottom": "12px", "color": "#1b285b"}),
+        html.P("Each range shows parameter values where at least one combination of the "
+               "other parameters produces a passing score. Wider = more flexibility.",
+               style={"fontSize": "13px", "color": "#888", "marginBottom": "14px"}),
+        html.Table([
+            html.Thead(html.Tr([
+                html.Th("Parameter", style={"padding": "10px 14px", "background": "#f0f4ff",
+                                             "textAlign": "left", "fontSize": "12px",
+                                             "fontWeight": "600"}),
+                html.Th("Min", style={"padding": "10px 14px", "background": "#f0f4ff",
+                                       "textAlign": "center", "fontSize": "12px",
+                                       "fontWeight": "600"}),
+                html.Th("Max", style={"padding": "10px 14px", "background": "#f0f4ff",
+                                       "textAlign": "center", "fontSize": "12px",
+                                       "fontWeight": "600"}),
+                html.Th("Flexibility", style={"padding": "10px 14px", "background": "#f0f4ff",
+                                               "textAlign": "left", "fontSize": "12px",
+                                               "fontWeight": "600"}),
+            ])),
+            html.Tbody(table_rows),
+        ], style={"width": "100%", "borderCollapse": "collapse"}),
+    ], style={"padding": "24px", "background": "white", "borderRadius": "12px",
+              "boxShadow": "0 2px 12px rgba(0,0,0,0.06)", "marginBottom": "20px"})
+
+    # 3. Tradeoff explorer
+    tradeoff_section = html.Div([
+        html.H3("Tradeoff Explorer",
+                 style={"marginTop": "0", "marginBottom": "8px", "color": "#1b285b"}),
+        html.P("Select two DC parameters to see how they trade off. The heatmap shows what "
+               "percentage of all other parameter combinations produce a passing score for "
+               "each pair of values.",
+               style={"fontSize": "13px", "color": "#888", "marginBottom": "14px"}),
+        html.Div([
+            html.Div([
+                html.Label("X Axis", style={"fontWeight": "600", "fontSize": "13px",
+                                             "marginBottom": "4px", "display": "block"}),
+                dcc.Dropdown(id="finder-tradeoff-x",
+                             options=_FINDER_PAIR_OPTIONS,
+                             value="baseline_pue",
+                             clearable=False,
+                             style={"fontSize": "14px"}),
+            ], style={"flex": "1", "minWidth": "180px"}),
+            html.Div([
+                html.Label("Y Axis", style={"fontWeight": "600", "fontSize": "13px",
+                                             "marginBottom": "4px", "display": "block"}),
+                dcc.Dropdown(id="finder-tradeoff-y",
+                             options=_FINDER_PAIR_OPTIONS,
+                             value="electricity_price",
+                             clearable=False,
+                             style={"fontSize": "14px"}),
+            ], style={"flex": "1", "minWidth": "180px"}),
+        ], style={"display": "flex", "gap": "14px", "marginBottom": "16px",
+                  "maxWidth": "500px"}),
+        dcc.Graph(id="finder-tradeoff-heatmap",
+                  style={"height": "500px"}),
+    ], style={"padding": "24px", "background": "white", "borderRadius": "12px",
+              "boxShadow": "0 2px 12px rgba(0,0,0,0.06)"})
+
+    results_layout = html.Div([summary_card, ranges_table, tradeoff_section])
+
+    status = html.Span(
+        f"Sweep complete — {total_combos:,} combinations analyzed",
+        style={"color": FINDER_TEAL, "fontWeight": "600"})
+
+    # Serialize for stores (convert numpy to lists)
+    composite_list = composite.tolist()
+    grids_ser = {k: v.tolist() for k, v in grids.items()}
+
+    return results_layout, status, composite_list, grids_ser, threshold
+
+
+# --- DC Finder: Tradeoff heatmap ---
+@callback(
+    Output("finder-tradeoff-heatmap", "figure"),
+    Input("finder-tradeoff-x", "value"),
+    Input("finder-tradeoff-y", "value"),
+    State("finder-composite-store", "data"),
+    State("finder-grids-store", "data"),
+    State("finder-threshold-store", "data"),
+    prevent_initial_call=True,
+)
+def update_finder_tradeoff(x_param, y_param, composite_list, grids_ser, threshold):
+    if composite_list is None or x_param == y_param:
+        fig = go.Figure()
+        if x_param == y_param:
+            fig.add_annotation(text="Select two different parameters",
+                             xref="paper", yref="paper", x=0.5, y=0.5,
+                             showarrow=False, font=dict(size=16, color="#999"))
+        fig.update_layout(
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
+            plot_bgcolor="white", paper_bgcolor="white", height=450)
+        return fig
+
+    composite = np.array(composite_list)
+    grids = {k: np.array(v) for k, v in grids_ser.items()}
+
+    tradeoff = compute_pairwise_tradeoff(composite, x_param, y_param, threshold)
+
+    x_vals = grids[x_param]
+    y_vals = grids[y_param]
+
+    # Format tick labels
+    x_fmt, x_unit, x_mult = _FINDER_PARAM_FMT[x_param]
+    y_fmt, y_unit, y_mult = _FINDER_PARAM_FMT[y_param]
+    x_labels = [format(v * x_mult, x_fmt) for v in x_vals]
+    y_labels = [format(v * y_mult, y_fmt) for v in y_vals]
+
+    # Build hover text
+    hover_text = []
+    for i, yv in enumerate(y_vals):
+        row = []
+        for j, xv in enumerate(x_vals):
+            pct = tradeoff[i, j] if tradeoff.shape == (len(y_vals), len(x_vals)) \
+                  else tradeoff[j, i]
+            row.append(
+                f"{_FINDER_PARAM_LABELS[x_param]}: {format(xv * x_mult, x_fmt)}"
+                f"{'  ' + x_unit if x_unit else ''}<br>"
+                f"{_FINDER_PARAM_LABELS[y_param]}: {format(yv * y_mult, y_fmt)}"
+                f"{'  ' + y_unit if y_unit else ''}<br>"
+                f"<b>{pct:.0f}% of other combos pass</b>")
+            row[-1] = row[-1].replace("  ", " ")
+        hover_text.append(row)
+
+    # Ensure tradeoff is oriented (y, x)
+    z_data = tradeoff.T if tradeoff.shape[0] == len(x_vals) else tradeoff
+
+    fig = go.Figure(data=go.Heatmap(
+        z=z_data,
+        x=x_labels,
+        y=y_labels,
+        text=hover_text,
+        hoverinfo="text",
+        colorscale=[
+            [0.0, "#ffffff"],
+            [0.3, "#d7e7f8"],
+            [0.6, "#88b4f2"],
+            [0.8, "#1075E8"],
+            [1.0, "#25ac01"],
+        ],
+        zmin=0, zmax=100,
+        colorbar=dict(
+            title=dict(text="% Passing", font=dict(size=12)),
+            ticksuffix="%",
+            len=0.8,
+        ),
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text=f"Tradeoff: {_FINDER_PARAM_LABELS[x_param]} vs "
+                 f"{_FINDER_PARAM_LABELS[y_param]}",
+            font=dict(size=15)),
+        xaxis=dict(title=_FINDER_PARAM_LABELS[x_param], tickfont=dict(size=11)),
+        yaxis=dict(title=_FINDER_PARAM_LABELS[y_param], tickfont=dict(size=11)),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        height=450,
+        margin=dict(l=80, r=40, t=50, b=60),
+    )
+
+    return fig
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

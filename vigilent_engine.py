@@ -226,6 +226,160 @@ def compute_score_grid(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# EXHAUSTIVE MULTI-VARIABLE SWEEP (DC FINDER)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def compute_exhaustive_sweep(
+    vigilent_params: Dict[str, float],
+    steps: int = 15,
+    scoring_config: Optional[Dict] = None,
+) -> tuple:
+    """
+    Sweep all 5 DC params simultaneously using vectorized numpy broadcasting.
+
+    vigilent_params: dict with keys investment_cost, energy_reduction_pct,
+                     water_reduction_pct (set by user, held fixed).
+    steps: number of grid points per DC param (default 15 → 759K combos).
+
+    Returns:
+        composite: 5D numpy array of shape (steps, steps, steps, steps, steps)
+                   with composite scores [0-100].
+                   Axes: (dc_size, pue, price, growth, opex)
+        grids: dict of 1D arrays for each DC param.
+    """
+    cfg = scoring_config if scoring_config is not None else SCORING_CONFIG
+
+    # 1D grids for each DC param
+    dc_size = np.linspace(DC_PARAMS["dc_size_mw"]["min"],
+                          DC_PARAMS["dc_size_mw"]["max"], steps)
+    pue = np.linspace(DC_PARAMS["baseline_pue"]["min"],
+                      DC_PARAMS["baseline_pue"]["max"], steps)
+    price = np.linspace(DC_PARAMS["electricity_price"]["min"],
+                        DC_PARAMS["electricity_price"]["max"], steps)
+    growth = np.linspace(DC_PARAMS["load_growth_rate"]["min"],
+                         DC_PARAMS["load_growth_rate"]["max"], steps)
+    opex = np.linspace(DC_PARAMS["energy_pct_opex"]["min"],
+                       DC_PARAMS["energy_pct_opex"]["max"], steps)
+
+    # Reshape for 5D broadcasting: (dc, pue, price, growth, opex)
+    D = dc_size[:, None, None, None, None]
+    P = pue[None, :, None, None, None]
+    E = price[None, None, :, None, None]
+    G = growth[None, None, None, :, None]
+    O = opex[None, None, None, None, :]
+
+    # Fixed Vigilent params
+    e_red = vigilent_params["energy_reduction_pct"]
+    w_red = vigilent_params["water_reduction_pct"]
+    inv = vigilent_params["investment_cost"]
+
+    # Vectorized scoring — same math as compute_score() lines 118-163
+    savings_per_mw = P * 1000 * 8760 * (1 + G) * E * e_red
+    payback = np.where(savings_per_mw > 0,
+                       inv / (D * savings_per_mw), 999.0)
+    impact_on_opex = e_red * O
+
+    # Score each factor 0-100
+    spm_max = cfg["savings_per_mw"]["max"]
+    pp_max = cfg["payback_period"]["max"]
+    opex_max = cfg["impact_on_opex"]["max"]
+    water_max = cfg["water_savings_pct"]["max"]
+    growth_max = cfg["load_growth"]["max"]
+
+    spm_score = np.clip(savings_per_mw / spm_max * 100, 0, 100)
+    pp_score = np.clip((1 - payback / pp_max) * 100, 0, 100)
+    opex_score = np.clip(impact_on_opex / opex_max * 100, 0, 100)
+    water_score = float(min(w_red / water_max * 100, 100))  # scalar
+    growth_score = np.clip(G / growth_max * 100, 0, 100)
+
+    composite = (spm_score * cfg["savings_per_mw"]["weight"]
+                 + pp_score * cfg["payback_period"]["weight"]
+                 + opex_score * cfg["impact_on_opex"]["weight"]
+                 + water_score * cfg["water_savings_pct"]["weight"]
+                 + growth_score * cfg["load_growth"]["weight"])
+
+    grids = {
+        "dc_size_mw": dc_size,
+        "baseline_pue": pue,
+        "electricity_price": price,
+        "load_growth_rate": growth,
+        "energy_pct_opex": opex,
+    }
+    return composite, grids
+
+
+# Axis index mapping for the 5D array
+_FINDER_AXES = {
+    "dc_size_mw": 0,
+    "baseline_pue": 1,
+    "electricity_price": 2,
+    "load_growth_rate": 3,
+    "energy_pct_opex": 4,
+}
+
+
+def extract_target_ranges(
+    composite: np.ndarray,
+    grids: Dict[str, np.ndarray],
+    threshold: float,
+) -> tuple:
+    """
+    From 5D score array, extract per-param ranges where score >= threshold.
+
+    Returns:
+        ranges: dict keyed by param name → {min, max, pct_of_range}
+        feasibility_pct: % of all combos that pass
+        total_passing: number of passing combos
+        total_combos: total combos tested
+    """
+    passing = composite >= threshold
+    total_passing = int(np.sum(passing))
+    total_combos = passing.size
+    feasibility_pct = total_passing / total_combos * 100
+
+    ranges = {}
+    for name, axis_idx in _FINDER_AXES.items():
+        other_axes = tuple(i for i in range(5) if i != axis_idx)
+        valid_mask = np.any(passing, axis=other_axes)
+        valid_vals = grids[name][valid_mask]
+        if len(valid_vals) > 0:
+            ranges[name] = {
+                "min": float(valid_vals.min()),
+                "max": float(valid_vals.max()),
+                "pct_of_range": float(np.sum(valid_mask) / len(grids[name]) * 100),
+            }
+        else:
+            ranges[name] = {
+                "min": None, "max": None, "pct_of_range": 0.0,
+            }
+
+    return ranges, feasibility_pct, total_passing, total_combos
+
+
+def compute_pairwise_tradeoff(
+    composite: np.ndarray,
+    param_a: str,
+    param_b: str,
+    threshold: float,
+) -> np.ndarray:
+    """
+    For a pair of DC params, compute % of other-param combos that pass.
+
+    Returns 2D array of shape (steps_a, steps_b) with values 0-100.
+    """
+    ax_a = _FINDER_AXES[param_a]
+    ax_b = _FINDER_AXES[param_b]
+    passing = composite >= threshold
+    other_axes = tuple(i for i in range(5) if i not in (ax_a, ax_b))
+    # Mean across other axes gives fraction passing, then × 100 for %
+    result = np.mean(passing, axis=other_axes) * 100
+    # Ensure axis order is (a, b) — numpy reduces in sorted order
+    if ax_a > ax_b:
+        result = result.T
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # OPENEI UTILITY RATE LOOKUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
