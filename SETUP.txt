@@ -5,7 +5,7 @@ HOW TO DOWNLOAD AND RUN
 -----------------------
 
 STEP 1: Download the files
-    - Click the green "Code" button on the GitHub repo page
+    - Click the green "Code" button on the GitHub repo page: 
     - Click "Download ZIP"
     - Unzip the folder somewhere on your computer (e.g., your Desktop)
 
