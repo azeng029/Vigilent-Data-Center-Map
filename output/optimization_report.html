@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vigilent Optimization Report</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.0.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #333;
+            background: #f5f6fa;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #1075E8, #0a4ea0);
+            color: white;
+            padding: 30px 40px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header .subtitle { font-size: 14px; opacity: 0.85; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+
+        .score-hero {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .score-hero .big-score {
+            font-size: 72px;
+            font-weight: 800;
+            color: #1075E8;
+            line-height: 1;
+        }
+        .score-hero .score-label {
+            font-size: 16px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        }
+        .card .card-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card .card-value { font-size: 22px; font-weight: 700; color: #1075E8; margin-top: 4px; }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .section h2 {
+            font-size: 18px;
+            color: #1075E8;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8f0fe;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: #f0f4ff;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dde4ef;
+        }
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover td { background: #f8faff; }
+
+        .interpretation {
+            background: #f0f8ff;
+            border-left: 4px solid #1075E8;
+            padding: 16px 20px;
+            margin-top: 12px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+        }
+        .interpretation h4 { color: #1075E8; margin-bottom: 6px; }
+
+        .chart-container { margin: 20px 0; }
+
+        .vigilent-params {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .vparam {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px 14px;
+        }
+        .vparam .vp-label { font-size: 11px; color: #888; text-transform: uppercase; }
+        .vparam .vp-value { font-size: 16px; font-weight: 600; }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Vigilent Optimization Report</h1>
+        <div class="subtitle">Generated March 09, 2026 at 04:13 AM | Ideal Data Center Profile Analysis</div>
+    </div>
+
+    <div class="container">
+        <!-- Composite Score Hero -->
+        <div class="score-hero">
+            <div class="big-score">92.2</div>
+            <div class="score-label">Maximum Achievable Composite Score (out of 100)</div>
+        </div>
+
+        <!-- Vigilent Parameters Used -->
+        <div class="section">
+            <h2>Vigilent Parameters (Fixed During Optimization)</h2>
+            <div class="vigilent-params">
+                <div class="vparam">
+                    <div class="vp-label">Investment Cost</div>
+                    <div class="vp-value">$1,500,000</div>
+                </div>
+                <div class="vparam">
+                    <div class="vp-label">Energy Reduction</div>
+                    <div class="vp-value">10.0%</div>
+                </div>
+                <div class="vparam">
+                    <div class="vp-label">Water Reduction</div>
+                    <div class="vp-value">5.0%</div>
+                </div>
+                <div class="vparam">
+                    <div class="vp-label">Years</div>
+                    <div class="vp-value">1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optimal Profile Cards -->
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">DC Size</div>
+                <div class="card-value">200 MW</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Baseline PUE</div>
+                <div class="card-value">2.50</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Electricity Price</div>
+                <div class="card-value">$0.5000/kWh</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Load Growth</div>
+                <div class="card-value">30.0%</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Energy % of OPEX</div>
+                <div class="card-value">80%</div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">Annual Energy Cost</div>
+                <div class="card-value" style="color:#333">$2,847,000,000</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Estimated Savings</div>
+                <div class="card-value" style="color:#25ac01">$284,700,000/yr</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Savings per MW</div>
+                <div class="card-value" style="color:#25ac01">$1,423,500</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Payback Period</div>
+                <div class="card-value" style="color:#333">0.01 yr</div>
+            </div>
+        </div>
+
+        <!-- Factor Breakdown -->
+        <div class="section">
+            <h2>Factor Score Breakdown</h2>
+            <table>
+                <tr><th>Factor</th><th>Score (/100)</th><th>Weight</th><th>Weighted</th></tr>
+                
+        <tr>
+            <td>$/MW Savings</td>
+            <td style="text-align:center">100.0</td>
+            <td style="text-align:center">35%</td>
+            <td style="text-align:center;font-weight:600">35.0</td>
+        </tr>
+        <tr>
+            <td>Water Savings</td>
+            <td style="text-align:center">62.5</td>
+            <td style="text-align:center">10%</td>
+            <td style="text-align:center;font-weight:600">6.2</td>
+        </tr>
+        <tr>
+            <td>OPEX Impact</td>
+            <td style="text-align:center">80.0</td>
+            <td style="text-align:center">20%</td>
+            <td style="text-align:center;font-weight:600">16.0</td>
+        </tr>
+        <tr>
+            <td>Payback Period</td>
+            <td style="text-align:center">99.9</td>
+            <td style="text-align:center">25%</td>
+            <td style="text-align:center;font-weight:600">25.0</td>
+        </tr>
+        <tr>
+            <td>Load Growth</td>
+            <td style="text-align:center">100.0</td>
+            <td style="text-align:center">10%</td>
+            <td style="text-align:center;font-weight:600">10.0</td>
+        </tr>
+                <tr style="font-weight:700;border-top:2px solid #1075E8">
+                    <td>TOTAL</td>
+                    <td style="text-align:center">92.2</td>
+                    <td style="text-align:center">100%</td>
+                    <td style="text-align:center;color:#1075E8">92.2</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Radar Chart -->
+        <div class="section">
+            <h2>Factor Score Radar</h2>
+            <div class="chart-container"><div>                            <div id="a88495b6-a3f4-4e5f-9416-b913927fc76d" class="plotly-graph-div" style="height:450px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("a88495b6-a3f4-4e5f-9416-b913927fc76d")) {                    Plotly.newPlot(                        "a88495b6-a3f4-4e5f-9416-b913927fc76d",                        [{"fill":"toself","fillcolor":"rgba(16, 117, 232, 0.25)","hoverinfo":"text+theta","line":{"color":"#1075E8","width":2},"marker":{"color":"#1075E8","size":8},"r":[100,62.5,80.00000000000001,99.89462592202318,100,100],"text":["100.0","62.5","80.0","99.9","100.0","100.0"],"theta":["$\u002fMW Savings","Water Savings","OPEX Impact","Payback Period","Load Growth","$\u002fMW Savings"],"type":"scatterpolar"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"polar":{"radialaxis":{"visible":true,"range":[0,100],"tickvals":[25,50,75,100]}},"title":{"font":{"size":16},"text":"Factor Scores at Optimum (Composite: 92.2)"},"margin":{"l":60,"r":60,"t":60,"b":40},"height":450},                        {"responsive": true}                    )                };            </script>        </div></div>
+        </div>
+
+        <!-- Sweet Spot Ranges -->
+        <div class="section">
+            <h2>Sweet Spot Ranges (Score &ge; 75)</h2>
+            <table>
+                <tr><th>Parameter</th><th>Min</th><th>Optimal</th><th>Max</th></tr>
+                
+        <tr>
+            <td>DC Size (MW)</td>
+            <td style="text-align:center">1 MW</td>
+            <td style="text-align:center;font-weight:600">200 MW</td>
+            <td style="text-align:center">200 MW</td>
+        </tr>
+        <tr>
+            <td>Baseline PUE</td>
+            <td style="text-align:center">1.00</td>
+            <td style="text-align:center;font-weight:600">2.50</td>
+            <td style="text-align:center">2.50</td>
+        </tr>
+        <tr>
+            <td>Electricity Price ($/kWh)</td>
+            <td style="text-align:center">$0.05/kWh</td>
+            <td style="text-align:center;font-weight:600">$0.50/kWh</td>
+            <td style="text-align:center">$0.50/kWh</td>
+        </tr>
+        <tr>
+            <td>Load Growth Rate (%)</td>
+            <td style="text-align:center">0e+00%</td>
+            <td style="text-align:center;font-weight:600">3e+01%</td>
+            <td style="text-align:center">3e+01%</td>
+        </tr>
+        <tr>
+            <td>Energy % of OPEX</td>
+            <td style="text-align:center">5e+00%</td>
+            <td style="text-align:center;font-weight:600">8e+01%</td>
+            <td style="text-align:center">8e+01%</td>
+        </tr>
+            </table>
+            <div class="chart-container"><div>                            <div id="7ec2a863-64b8-4488-9e6e-b82ab0e1450f" class="plotly-graph-div" style="height:350px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("7ec2a863-64b8-4488-9e6e-b82ab0e1450f")) {                    Plotly.newPlot(                        "7ec2a863-64b8-4488-9e6e-b82ab0e1450f",                        [{"hoverinfo":"skip","marker":{"color":"#f0f0f0"},"orientation":"h","showlegend":false,"x":[100],"y":["DC Size (MW)"],"type":"bar"},{"base":[0.0],"hoverinfo":"text","hovertext":"Sweet spot: 1.00 \u2013 200.00","marker":{"color":"#1075E8","opacity":0.6},"orientation":"h","showlegend":false,"x":[100.0],"y":["DC Size (MW)"],"type":"bar"},{"hoverinfo":"text","hovertext":"Optimal: 200.00","marker":{"color":"#1075E8","line":{"color":"white","width":2},"size":14,"symbol":"diamond"},"mode":"markers","showlegend":false,"x":[100.0],"y":["DC Size (MW)"],"type":"scatter"},{"hoverinfo":"skip","marker":{"color":"#f0f0f0"},"orientation":"h","showlegend":false,"x":[100],"y":["Baseline PUE"],"type":"bar"},{"base":[0.0],"hoverinfo":"text","hovertext":"Sweet spot: 1.00 \u2013 2.50","marker":{"color":"#25ac01","opacity":0.6},"orientation":"h","showlegend":false,"x":[100.0],"y":["Baseline PUE"],"type":"bar"},{"hoverinfo":"text","hovertext":"Optimal: 2.50","marker":{"color":"#25ac01","line":{"color":"white","width":2},"size":14,"symbol":"diamond"},"mode":"markers","showlegend":false,"x":[100.0],"y":["Baseline PUE"],"type":"scatter"},{"hoverinfo":"skip","marker":{"color":"#f0f0f0"},"orientation":"h","showlegend":false,"x":[100],"y":["Electricity Price ($\u002fkWh)"],"type":"bar"},{"base":[9.01803607214429],"hoverinfo":"text","hovertext":"Sweet spot: 0.05 \u2013 0.50","marker":{"color":"#FF6B35","opacity":0.6},"orientation":"h","showlegend":false,"x":[90.98196392785572],"y":["Electricity Price ($\u002fkWh)"],"type":"bar"},{"hoverinfo":"text","hovertext":"Optimal: 0.50","marker":{"color":"#FF6B35","line":{"color":"white","width":2},"size":14,"symbol":"diamond"},"mode":"markers","showlegend":false,"x":[100.0],"y":["Electricity Price ($\u002fkWh)"],"type":"scatter"},{"hoverinfo":"skip","marker":{"color":"#f0f0f0"},"orientation":"h","showlegend":false,"x":[100],"y":["Load Growth Rate (%)"],"type":"bar"},{"base":[0.0],"hoverinfo":"text","hovertext":"Sweet spot: 0.00 \u2013 30.00","marker":{"color":"#8B5CF6","opacity":0.6},"orientation":"h","showlegend":false,"x":[100.0],"y":["Load Growth Rate (%)"],"type":"bar"},{"hoverinfo":"text","hovertext":"Optimal: 30.00","marker":{"color":"#8B5CF6","line":{"color":"white","width":2},"size":14,"symbol":"diamond"},"mode":"markers","showlegend":false,"x":[100.0],"y":["Load Growth Rate (%)"],"type":"scatter"},{"hoverinfo":"skip","marker":{"color":"#f0f0f0"},"orientation":"h","showlegend":false,"x":[100],"y":["Energy % of OPEX"],"type":"bar"},{"base":[0.0],"hoverinfo":"text","hovertext":"Sweet spot: 5.00 \u2013 80.00","marker":{"color":"#EC4899","opacity":0.6},"orientation":"h","showlegend":false,"x":[100.0],"y":["Energy % of OPEX"],"type":"bar"},{"hoverinfo":"text","hovertext":"Optimal: 80.00","marker":{"color":"#EC4899","line":{"color":"white","width":2},"size":14,"symbol":"diamond"},"mode":"markers","showlegend":false,"x":[100.0],"y":["Energy % of OPEX"],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"font":{"size":16},"text":"Sweet Spot Ranges (Score \u003e= 75)"},"xaxis":{"title":{"text":"% of Parameter Range"},"range":[0,100]},"yaxis":{"autorange":"reversed"},"margin":{"l":160,"r":30,"t":60,"b":50},"barmode":"overlay","height":350},                        {"responsive": true}                    )                };            </script>        </div></div>
+        </div>
+
+        <!-- Sensitivity Analysis -->
+        <div class="section">
+            <h2>Sensitivity Analysis</h2>
+            <p style="font-size:14px;color:#666;margin-bottom:12px">
+                Each chart sweeps one parameter while holding all others at optimal values.
+                Green shading shows the sweet spot range. Diamond markers show the optimum.
+            </p>
+            <div class="chart-container"><div>                            <div id="44c7c893-5066-4ab8-bc66-c7f190dcdaa2" class="plotly-graph-div" style="height:750px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("44c7c893-5066-4ab8-bc66-c7f190dcdaa2")) {                    Plotly.newPlot(                        "44c7c893-5066-4ab8-bc66-c7f190dcdaa2",                        [{"line":{"color":"#1075E8","width":2.5},"mode":"lines","name":"DC Size (MW)","showlegend":false,"x":[1.0,3.01010101010101,5.02020202020202,7.030303030303029,9.04040404040404,11.05050505050505,13.060606060606059,15.07070707070707,17.08080808080808,19.09090909090909,21.1010101010101,23.11111111111111,25.121212121212118,27.131313131313128,29.14141414141414,31.15151515151515,33.16161616161616,35.17171717171717,37.18181818181818,39.19191919191919,41.2020202020202,43.21212121212121,45.22222222222222,47.23232323232323,49.242424242424235,51.252525252525245,53.262626262626256,55.272727272727266,57.28282828282828,59.29292929292929,61.3030303030303,63.31313131313131,65.32323232323232,67.33333333333333,69.34343434343434,71.35353535353535,73.36363636363636,75.37373737373737,77.38383838383838,79.39393939393939,81.4040404040404,83.41414141414141,85.42424242424242,87.43434343434343,89.44444444444444,91.45454545454545,93.46464646464646,95.47474747474747,97.48484848484847,99.49494949494948,101.50505050505049,103.5151515151515,105.52525252525251,107.53535353535352,109.54545454545453,111.55555555555554,113.56565656565655,115.57575757575756,117.58585858585857,119.59595959595958,121.6060606060606,123.6161616161616,125.62626262626262,127.63636363636363,129.64646464646464,131.65656565656565,133.66666666666666,135.67676767676767,137.68686868686868,139.6969696969697,141.7070707070707,143.7171717171717,145.72727272727272,147.73737373737373,149.74747474747474,151.75757575757575,153.76767676767676,155.77777777777777,157.78787878787878,159.7979797979798,161.8080808080808,163.8181818181818,165.82828282828282,167.83838383838383,169.84848484848484,171.85858585858585,173.86868686868686,175.87878787878788,177.88888888888889,179.8989898989899,181.9090909090909,183.91919191919192,185.92929292929293,187.93939393939394,189.94949494949495,191.95959595959596,193.96969696969694,195.97979797979795,197.98989898989896,200.0],"y":[86.98129610115912,90.49965877186159,91.2004996257842,91.50057229025109,91.66720482012822,91.77321600915425,91.84659575716532,91.9004010147552,91.94154246837064,91.97402027196549,92.00031034658437,92.02202723514631,92.04026872296532,92.05580726508367,92.06920218856663,92.08086845460919,92.09112041243215,92.10020054968832,92.10829891714609,92.115566575777,92.12212510762804,92.12807347218671,92.13349303417797,92.13845130753096,92.143004782362,92.1472010867195,92.1510806588308,92.15467805446175,92.15802297901865,92.1611411097129,92.16405475597541,92.16678339406745,92.16934410298666,92.17175192229445,92.1740201477079,92.17616057672916,92.17818371389436,92.18009894318075,92.18191467354325,92.18363846234284,92.18527712048825,92.18683680237524,92.18832308312815,92.18974102518655,92.19109523591358,92.1923899176071,92.19362891105747,92.19481573360292,92.19595361247693,92.19704551411317,92.19809416996863,92.19910209933789,92.20007162956014,92.20100491395968,92.20190394781142,92.20277058258011,92.20360653864758,92.20441341671166,92.20519270801604,92.20594580354854,92.206674002327,92.20737851887684,92.20806048999073,92.20872098084953,92.2093609905738,92.20998145726674,92.21058326260219,92.21116723600467,92.21173415846341,92.21228476601698,92.21281975294139,92.2133397746707,92.21384545047583,92.2143373659247,92.21481607514434,92.215282102903,92.21573594652925,92.21617807768219,92.2166089439866,92.21702897054455,92.21743856133433,92.21783810050653,92.2182279535856,92.21860846858539,92.21897997704518,92.21934279499322,92.2196972238433,92.22004355122988,92.22038205178666,92.22071298787282,92.22103661025125,92.22135315872225,92.22166286271607,92.22196594184751,92.22226260643524,92.22255305798856,92.22283748966385,92.22311608669285,92.2233890267851,92.2236564805058],"type":"scatter","xaxis":"x","yaxis":"y"},{"hoverinfo":"text","hovertext":"Optimal: 200.00","marker":{"color":"#1075E8","line":{"color":"white","width":2},"size":12,"symbol":"diamond"},"mode":"markers","name":"Optimal","showlegend":false,"x":[200.0],"y":[92.2236564805058],"type":"scatter","xaxis":"x","yaxis":"y"},{"line":{"color":"#25ac01","width":2.5},"mode":"lines","name":"Baseline PUE","showlegend":false,"x":[1.0,1.0151515151515151,1.0303030303030303,1.0454545454545454,1.0606060606060606,1.0757575757575757,1.0909090909090908,1.106060606060606,1.121212121212121,1.1363636363636362,1.1515151515151516,1.1666666666666667,1.1818181818181819,1.196969696969697,1.2121212121212122,1.2272727272727273,1.2424242424242424,1.2575757575757576,1.2727272727272727,1.2878787878787878,1.303030303030303,1.3181818181818181,1.3333333333333335,1.3484848484848486,1.3636363636363638,1.378787878787879,1.393939393939394,1.4090909090909092,1.4242424242424243,1.4393939393939394,1.4545454545454546,1.4696969696969697,1.4848484848484849,1.5,1.5151515151515151,1.5303030303030303,1.5454545454545454,1.5606060606060606,1.5757575757575757,1.5909090909090908,1.606060606060606,1.621212121212121,1.6363636363636362,1.6515151515151514,1.6666666666666667,1.6818181818181819,1.696969696969697,1.7121212121212122,1.7272727272727273,1.7424242424242424,1.7575757575757576,1.7727272727272727,1.7878787878787878,1.8030303030303032,1.8181818181818183,1.8333333333333335,1.8484848484848486,1.8636363636363638,1.878787878787879,1.893939393939394,1.9090909090909092,1.9242424242424243,1.9393939393939394,1.9545454545454546,1.9696969696969697,1.9848484848484849,2.0,2.015151515151515,2.0303030303030303,2.0454545454545454,2.0606060606060606,2.0757575757575757,2.090909090909091,2.1060606060606064,2.121212121212121,2.1363636363636367,2.1515151515151514,2.166666666666667,2.1818181818181817,2.1969696969696972,2.212121212121212,2.2272727272727275,2.242424242424242,2.257575757575758,2.2727272727272725,2.287878787878788,2.3030303030303028,2.3181818181818183,2.3333333333333335,2.3484848484848486,2.3636363636363638,2.378787878787879,2.393939393939394,2.409090909090909,2.4242424242424243,2.4393939393939394,2.4545454545454546,2.4696969696969697,2.484848484848485,2.5],"y":[92.18414120126448,92.1851241684098,92.18607822475671,92.18700462729647,92.18790456119223,92.18877914483741,92.18962943449245,92.1904564285405,92.19126107139806,92.19204425711274,92.19280683267706,92.19354960108384,92.19427332414688,92.19497872510703,92.1956664910432,92.1963372751044,92.19699169857873,92.19763035281272,92.19825380099353,92.19886257980536,92.19945720097041,92.2000381526834,92.20060590094837,92.20116089082535,92.20170354759395,92.20223427784018,92.20275347047235,92.20326149767158,92.20375871578145,92.20424546614164,92.20472207586934,92.20518885859234,92.20564611513731,92.20609413417633,92.20653319283457,92.20696355726194,92.20738548317114,92.20779921634424,92.20820499311016,92.20860304079483,92.20899357814581,92.20937681573324,92.2097529563283,92.21012219526106,92.2104847207587,92.21084071426537,92.21119035074514,92.21153379896865,92.2118712217847,92.21220277637788,92.21252861451255,92.21284888276458,92.21316372274116,92.21347327128954,92.21377766069547,92.21407701887154,92.21437146953653,92.21466113238583,92.21494612325368,92.21522655426764,92.21550253399569,92.21577416758626,92.216041556902,92.21630480064695,92.21656399448813,92.21681923117143,92.21707060063224,92.21731819010117,92.2175620842049,92.21780236506264,92.21803911237835,92.21827240352887,92.21850231364823,92.21872891570831,92.21895228059611,92.21917247718764,92.2193895724187,92.21960363135284,92.21981471724622,92.22002289161004,92.22022821427025,92.22043074342487,92.22063053569903,92.22082764619769,92.22102212855637,92.22121403498977,92.22140341633853,92.2215903221141,92.22177480054192,92.22195689860294,92.22213666207344,92.22231413556341,92.22248936255352,92.22266238543054,92.2228332455216,92.22300198312706,92.22316863755219,92.22333324713777,92.22349584928936,92.2236564805058],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"hoverinfo":"text","hovertext":"Optimal: 2.50","marker":{"color":"#25ac01","line":{"color":"white","width":2},"size":12,"symbol":"diamond"},"mode":"markers","name":"Optimal","showlegend":false,"x":[2.5],"y":[92.2236564805058],"type":"scatter","xaxis":"x2","yaxis":"y2"},{"line":{"color":"#FF6B35","width":2.5},"mode":"lines","name":"Electricity Price ($\u002fkWh)","showlegend":false,"x":[0.01,0.014949494949494949,0.0198989898989899,0.02484848484848485,0.029797979797979796,0.03474747474747475,0.039696969696969696,0.04464646464646465,0.049595959595959596,0.05454545454545454,0.059494949494949496,0.06444444444444444,0.06939393939393938,0.07434343434343434,0.07929292929292929,0.08424242424242423,0.08919191919191918,0.09414141414141414,0.09909090909090908,0.10404040404040403,0.10898989898989898,0.11393939393939392,0.11888888888888888,0.12383838383838383,0.12878787878787878,0.13373737373737374,0.1386868686868687,0.14363636363636365,0.1485858585858586,0.15353535353535352,0.15848484848484848,0.16343434343434343,0.16838383838383839,0.17333333333333334,0.1782828282828283,0.18323232323232325,0.18818181818181817,0.19313131313131313,0.19808080808080808,0.20303030303030303,0.207979797979798,0.21292929292929294,0.21787878787878787,0.22282828282828282,0.22777777777777777,0.23272727272727273,0.23767676767676768,0.24262626262626263,0.24757575757575756,0.2525252525252525,0.25747474747474747,0.26242424242424245,0.2673737373737374,0.2723232323232323,0.2772727272727273,0.2822222222222222,0.2871717171717172,0.2921212121212121,0.29707070707070704,0.302020202020202,0.30696969696969695,0.31191919191919193,0.31686868686868686,0.32181818181818184,0.32676767676767676,0.3317171717171717,0.33666666666666667,0.3416161616161616,0.3465656565656566,0.3515151515151515,0.3564646464646465,0.3614141414141414,0.36636363636363634,0.3713131313131313,0.37626262626262624,0.3812121212121212,0.38616161616161615,0.3911111111111111,0.39606060606060606,0.401010101010101,0.40595959595959596,0.4109090909090909,0.41585858585858587,0.4208080808080808,0.4257575757575757,0.4307070707070707,0.43565656565656563,0.4406060606060606,0.44555555555555554,0.4505050505050505,0.45545454545454545,0.46040404040404037,0.46535353535353535,0.4703030303030303,0.47525252525252526,0.4802020202020202,0.4851515151515151,0.4901010101010101,0.495050505050505,0.5],"y":[59.25432402528978,61.33439081844561,63.197518421364165,64.9733412282116,66.70536366279285,68.4123027446519,70.10354079656271,71.78429965427728,73.45771667328818,75.12579046524253,76.78985456898124,78.45083284683616,80.10938558469506,81.76599723144304,83.42103127802696,85.07476579066281,86.72741711305426,88.37915609173132,90.03011943874901,91.68041785105291,92.12914696802937,92.13439678945363,92.13920949745429,92.14363750285781,92.14772515961073,92.15151025566743,92.15502518463488,92.1582978751784,92.1613525346728,92.16421024901558,92.16688947004697,92.16940641440277,92.17177539202382,92.1740090783821,92.17611874136186,92.17811443136918,92.18000514144052,92.18179894273206,92.18350309969591,92.1851241684098,92.1866680808663,92.18814021750649,92.18954546986726,92.19088829487927,92.19217276208589,92.19340259483667,92.19458120633391,92.19571173126715,92.19679705365307,92.19783983140147,92.19884251804774,92.19980738202605,92.20073652380192,92.20163189113639,92.20249529271537,92.20332841034491,92.20413280988522,92.2049099510732,92.20566119636304,92.20638781889755,92.20709100970835,92.20777188423047,92.20843148820647,92.20907080304573,92.20969075069667,92.21029219808273,92.21087596114722,92.21144280854634,92.21199346502584,92.21252861451255,92.21304890294806,92.2135549408898,92.2140473059012,92.21452654475073,92.21499317543723,92.21544768905768,92.21589055153117,92.21632220519207,92.21674307026363,92.21715354622259,92.21755401306388,92.21794483247386,92.21832634892002,92.21869889066339,92.21906277070076,92.21941828764157,92.21976572652531,92.22010535958361,92.22043744695164,92.22076223733266,92.22107996861914,92.22139086847382,92.22169515487381,92.2219930366202,92.22228471381587,92.22257037831378,92.22285021413776,92.22312439787792,92.22339309906216,92.2236564805058],"type":"scatter","xaxis":"x3","yaxis":"y3"},{"hoverinfo":"text","hovertext":"Optimal: 0.50","marker":{"color":"#FF6B35","line":{"color":"white","width":2},"size":12,"symbol":"diamond"},"mode":"markers","name":"Optimal","showlegend":false,"x":[0.5],"y":[92.2236564805058],"type":"scatter","xaxis":"x3","yaxis":"y3"},{"line":{"color":"#8B5CF6","width":2.5},"mode":"lines","name":"Load Growth Rate (%)","showlegend":false,"x":[0.0,0.30303030303030304,0.6060606060606061,0.9090909090909091,1.2121212121212122,1.5151515151515151,1.8181818181818181,2.1212121212121215,2.4242424242424243,2.727272727272727,3.0303030303030303,3.3333333333333335,3.6363636363636362,3.939393939393939,4.242424242424243,4.545454545454546,4.848484848484849,5.151515151515151,5.454545454545454,5.757575757575758,6.0606060606060606,6.363636363636363,6.666666666666667,6.969696969696971,7.2727272727272725,7.575757575757576,7.878787878787878,8.181818181818182,8.484848484848486,8.787878787878787,9.090909090909092,9.393939393939393,9.696969696969697,10.0,10.303030303030303,10.606060606060606,10.909090909090908,11.212121212121213,11.515151515151516,11.818181818181818,12.121212121212121,12.424242424242424,12.727272727272727,13.030303030303031,13.333333333333334,13.636363636363635,13.939393939393941,14.242424242424242,14.545454545454545,14.84848484848485,15.151515151515152,15.454545454545453,15.757575757575756,16.060606060606062,16.363636363636363,16.666666666666664,16.969696969696972,17.272727272727273,17.575757575757574,17.87878787878788,18.181818181818183,18.484848484848484,18.787878787878785,19.090909090909093,19.393939393939394,19.696969696969695,20.0,20.303030303030305,20.606060606060606,20.909090909090907,21.21212121212121,21.515151515151516,21.818181818181817,22.12121212121212,22.424242424242426,22.727272727272727,23.03030303030303,23.333333333333332,23.636363636363637,23.939393939393938,24.242424242424242,24.545454545454547,24.848484848484848,25.151515151515152,25.454545454545453,25.757575757575758,26.060606060606062,26.36363636363636,26.666666666666668,26.969696969696972,27.27272727272727,27.575757575757574,27.878787878787882,28.18181818181818,28.484848484848484,28.78787878787879,29.09090909090909,29.393939393939394,29.6969696969697,30.0],"y":[82.21575342465754,82.41787709065159,82.62000013336868,82.82212255842393,83.0242443713652,83.2263655776741,83.42848618276702,83.63060619199597,83.83272561064975,84.03484444395463,84.23696269707551,84.43908037511662,84.6411974831225,84.84331402607891,85.0454300089136,85.24754543649719,85.44966031364402,85.65177464511285,85.85388843560786,86.05600168977921,86.258114412224,86.46022660748687,86.66233828006088,86.86444943438812,87.06656007486052,87.26867020582051,87.47077983156174,87.67288895632973,87.8749975843226,88.07710571969167,88.27921336654214,88.48132052893371,88.68342721088123,88.88553341635534,89.08763914928298,89.28974441354814,89.49184921299226,89.69395355141502,89.89605743257471,90.09816086018893,90.30026383793508,90.50236636945088,90.704468458335,90.90657010814748,91.10867132241023,91.31077210460772,91.51287245818725,91.71497238655954,91.91707189309929,92.11917098114553,92.22025955299208,92.22033761190809,92.22041526213872,92.22049250688508,92.22056934931507,92.2206457925636,92.22072183973313,92.22079749389403,92.22087275808502,92.22094763531359,92.22102212855637,92.22109624075955,92.22116997483926,92.2212433336819,92.22131632014464,92.22138893705566,92.22146118721462,92.22153307339292,92.22160459833414,92.22167576475435,92.22174657534246,92.22181703276057,92.22188713964425,92.22195689860294,92.22202631222027,92.2220953830543,92.2221641136379,92.22223250647909,92.22230056406124,92.22236828884348,92.22243568326094,92.22250274972502,92.22256949062375,92.222635908322,92.2227020051618,92.22276778346261,92.2228332455216,92.22289839361387,92.22296322999279,92.22302775689019,92.22309197651663,92.22315589106172,92.22321950269428,92.22328281356262,92.22334582579478,92.2234085414988,92.22347096276287,92.22353309165571,92.2235949302266,92.2236564805058],"type":"scatter","xaxis":"x4","yaxis":"y4"},{"hoverinfo":"text","hovertext":"Optimal: 30.00","marker":{"color":"#8B5CF6","line":{"color":"white","width":2},"size":12,"symbol":"diamond"},"mode":"markers","name":"Optimal","showlegend":false,"x":[30.0],"y":[92.2236564805058],"type":"scatter","xaxis":"x4","yaxis":"y4"},{"line":{"color":"#EC4899","width":2.5},"mode":"lines","name":"Energy % of OPEX","showlegend":false,"x":[5.0,5.757575757575758,6.515151515151516,7.2727272727272725,8.030303030303031,8.787878787878789,9.545454545454547,10.303030303030303,11.06060606060606,11.818181818181818,12.575757575757576,13.333333333333336,14.090909090909093,14.84848484848485,15.606060606060607,16.363636363636363,17.12121212121212,17.87878787878788,18.636363636363633,19.393939393939398,20.151515151515152,20.90909090909091,21.666666666666668,22.424242424242426,23.18181818181818,23.939393939393938,24.696969696969695,25.454545454545457,26.212121212121215,26.969696969696972,27.727272727272727,28.484848484848484,29.242424242424242,30.0,30.757575757575754,31.515151515151512,32.272727272727266,33.03030303030303,33.78787878787879,34.54545454545455,35.303030303030305,36.06060606060606,36.81818181818181,37.57575757575757,38.333333333333336,39.09090909090909,39.84848484848485,40.60606060606061,41.36363636363637,42.12121212121212,42.878787878787875,43.63636363636363,44.39393939393939,45.151515151515156,45.909090909090914,46.666666666666664,47.42424242424242,48.18181818181818,48.93939393939394,49.696969696969695,50.45454545454546,51.21212121212122,51.969696969696976,52.727272727272734,53.48484848484849,54.24242424242425,55.00000000000001,55.757575757575765,56.515151515151516,57.27272727272727,58.03030303030303,58.78787878787879,59.54545454545455,60.30303030303031,61.06060606060607,61.81818181818183,62.575757575757585,63.33333333333334,64.0909090909091,64.84848484848486,65.60606060606061,66.36363636363637,67.12121212121212,67.87878787878789,68.63636363636364,69.39393939393939,70.15151515151516,70.9090909090909,71.66666666666669,72.42424242424244,73.18181818181819,73.93939393939395,74.6969696969697,75.45454545454547,76.21212121212122,76.96969696969698,77.72727272727273,78.48484848484848,79.24242424242425,80.0],"y":[77.2236564805058,77.37517163202094,77.52668678353609,77.67820193505125,77.8297170865664,77.98123223808156,78.1327473895967,78.28426254111186,78.435777692627,78.58729284414215,78.73880799565731,78.89032314717247,79.04183829868762,79.19335345020276,79.34486860171792,79.49638375323306,79.64789890474822,79.79941405626337,79.95092920777853,80.10244435929368,80.25395951080883,80.40547466232397,80.55698981383912,80.70850496535428,80.86002011686944,81.01153526838459,81.16305041989973,81.31456557141489,81.46608072293003,81.61759587444519,81.76911102596034,81.9206261774755,82.07214132899065,82.2236564805058,82.37517163202094,82.52668678353609,82.67820193505125,82.8297170865664,82.98123223808156,83.1327473895967,83.28426254111186,83.435777692627,83.58729284414215,83.73880799565731,83.89032314717247,84.04183829868762,84.19335345020276,84.34486860171792,84.49638375323306,84.64789890474822,84.79941405626337,84.95092920777853,85.10244435929367,85.25395951080883,85.40547466232398,85.55698981383912,85.70850496535428,85.86002011686944,86.01153526838459,86.16305041989973,86.31456557141489,86.46608072293003,86.61759587444519,86.76911102596034,86.9206261774755,87.07214132899065,87.2236564805058,87.37517163202095,87.52668678353609,87.67820193505125,87.8297170865664,87.98123223808156,88.1327473895967,88.28426254111186,88.43577769262701,88.58729284414215,88.73880799565731,88.89032314717247,89.04183829868762,89.19335345020276,89.34486860171792,89.49638375323306,89.64789890474822,89.79941405626337,89.95092920777853,90.10244435929367,90.25395951080883,90.40547466232397,90.55698981383912,90.70850496535428,90.86002011686944,91.01153526838459,91.16305041989973,91.31456557141489,91.46608072293004,91.61759587444519,91.76911102596034,91.9206261774755,92.07214132899065,92.2236564805058],"type":"scatter","xaxis":"x5","yaxis":"y5"},{"hoverinfo":"text","hovertext":"Optimal: 80.00","marker":{"color":"#EC4899","line":{"color":"white","width":2},"size":12,"symbol":"diamond"},"mode":"markers","name":"Optimal","showlegend":false,"x":[80.0],"y":[92.2236564805058],"type":"scatter","xaxis":"x5","yaxis":"y5"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"xaxis":{"anchor":"y","domain":[0.0,0.45]},"yaxis":{"anchor":"x","domain":[0.7466666666666667,1.0],"range":[0,105]},"xaxis2":{"anchor":"y2","domain":[0.55,1.0]},"yaxis2":{"anchor":"x2","domain":[0.7466666666666667,1.0],"range":[0,105]},"xaxis3":{"anchor":"y3","domain":[0.0,0.45]},"yaxis3":{"anchor":"x3","domain":[0.37333333333333335,0.6266666666666667],"range":[0,105]},"xaxis4":{"anchor":"y4","domain":[0.55,1.0]},"yaxis4":{"anchor":"x4","domain":[0.37333333333333335,0.6266666666666667],"range":[0,105]},"xaxis5":{"anchor":"y5","domain":[0.0,0.45]},"yaxis5":{"anchor":"x5","domain":[0.0,0.25333333333333335],"range":[0,105]},"xaxis6":{"anchor":"y6","domain":[0.55,1.0]},"yaxis6":{"anchor":"x6","domain":[0.0,0.25333333333333335],"range":[0,105]},"annotations":[{"font":{"size":16},"showarrow":false,"text":"DC Size (MW)","x":0.225,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Baseline PUE","x":0.775,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Electricity Price ($\u002fkWh)","x":0.225,"xanchor":"center","xref":"paper","y":0.6266666666666667,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Load Growth Rate (%)","x":0.775,"xanchor":"center","xref":"paper","y":0.6266666666666667,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"Energy % of OPEX","x":0.225,"xanchor":"center","xref":"paper","y":0.25333333333333335,"yanchor":"bottom","yref":"paper"}],"shapes":[{"line":{"color":"#999","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":75,"y1":75,"yref":"y"},{"fillcolor":"rgba(37, 172, 1, 0.1)","line":{"width":0},"type":"rect","x0":1.0,"x1":200.0,"xref":"x","y0":0,"y1":1,"yref":"y domain"},{"line":{"color":"#999","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x2 domain","y0":75,"y1":75,"yref":"y2"},{"fillcolor":"rgba(37, 172, 1, 0.1)","line":{"width":0},"type":"rect","x0":1.0,"x1":2.5,"xref":"x2","y0":0,"y1":1,"yref":"y2 domain"},{"line":{"color":"#999","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x3 domain","y0":75,"y1":75,"yref":"y3"},{"fillcolor":"rgba(37, 172, 1, 0.1)","line":{"width":0},"type":"rect","x0":0.05418837675350702,"x1":0.5,"xref":"x3","y0":0,"y1":1,"yref":"y3 domain"},{"line":{"color":"#999","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x4 domain","y0":75,"y1":75,"yref":"y4"},{"fillcolor":"rgba(37, 172, 1, 0.1)","line":{"width":0},"type":"rect","x0":0.0,"x1":30.0,"xref":"x4","y0":0,"y1":1,"yref":"y4 domain"},{"line":{"color":"#999","dash":"dash","width":1},"type":"line","x0":0,"x1":1,"xref":"x5 domain","y0":75,"y1":75,"yref":"y5"},{"fillcolor":"rgba(37, 172, 1, 0.1)","line":{"width":0},"type":"rect","x0":5.0,"x1":80.0,"xref":"x5","y0":0,"y1":1,"yref":"y5 domain"}],"title":{"font":{"size":16},"text":"Sensitivity Analysis \u2014 Composite Score vs Each Parameter"},"margin":{"l":50,"r":30,"t":70,"b":40},"height":750},                        {"responsive": true}                    )                };            </script>        </div></div>
+        </div>
+
+        
+
+        <!-- Interpretation -->
+        <div class="section">
+            <h2>Interpretation Guide</h2>
+            <div class="interpretation">
+                <h4>DC Size</h4>
+                <p>Smaller DCs achieve higher per-MW savings because Vigilent's fixed investment is spread over less capacity. Target smaller-to-mid sized facilities for maximum per-MW impact.</p>
+            </div>
+            <div class="interpretation" style="margin-top:8px">
+                <h4>Baseline PUE</h4>
+                <p>Higher PUE means more total energy consumption, leading to larger absolute savings and faster payback. Target inefficient facilities — they benefit most from cooling optimization.</p>
+            </div>
+            <div class="interpretation" style="margin-top:8px">
+                <h4>Electricity Price</h4>
+                <p>Higher prices multiply the dollar value of every kWh saved. Target DCs in expensive electricity markets (CA, NY, NE) for maximum financial impact.</p>
+            </div>
+            <div class="interpretation" style="margin-top:8px">
+                <h4>Load Growth Rate</h4>
+                <p>Higher growth rates increase urgency and projected savings. Target DCs under capacity pressure from AI/cloud expansion.</p>
+            </div>
+            <div class="interpretation" style="margin-top:8px">
+                <h4>Energy % of OPEX</h4>
+                <p>When energy dominates operating costs, Vigilent's savings have outsized impact on the bottom line. Target facilities where energy is 40%+ of OPEX.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Vigilent Optimization Report | Generated by optimizer.py | 2026-03-09
+    </div>
+</body>
+</html>
