@@ -1973,68 +1973,65 @@
         // --- Shared popup builder for ALL data centers ---
         function buildDcPopup(feature, layer) {
             var p = feature.properties;
+            var td = 'style="padding:3px 0;"';
+            var tdr = 'style="text-align:right;padding:3px 0;"';
+
+            // Location line
             var loc = (p['City'] || '');
             if (p['State/Province'] || p['State Abv']) loc += ', ' + (p['State Abv'] || p['State/Province'] || '');
             if (p['Country'] && p['Country'] !== 'USA') loc += ', ' + p['Country'];
 
-            var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:240px;max-width:320px;">';
+            var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:260px;max-width:320px;">';
             html += '<div style="font-size:16px;font-weight:700;color:#1b285b;margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
             html += '<div style="font-size:13px;color:#666;margin-bottom:2px;">' + loc + '</div>';
             html += '<div style="font-size:13px;color:#666;margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
             html += '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
 
-            // Basic info
-            html += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right;padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
-            html += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right;padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+            // --- Facility Info (always shown) ---
+            html += '<tr><td ' + td + '><b>Size</b></td><td ' + tdr + '>' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Status</b></td><td ' + tdr + '>' + (p['Operational Status'] || 'N/A') + '</td></tr>';
 
-            // Find electricity rate (try all regional key patterns)
+            // --- Rates (always shown — use regional key or fall back to electricity_price_used) ---
             var elecRate = p['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']
                 || p['Europe Statistics_Commercial Electricity Rate (¢/kWh)']
                 || p['Canada Statistics_Commercial Electricity Rate (¢/kWh)']
                 || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Electricity Rate (¢/kWh)'];
             if (elecRate == null && p['electricity_price_used'] != null) elecRate = (p['electricity_price_used'] * 100).toFixed(1);
-            html += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right;padding:3px 0;">' + (elecRate != null ? elecRate + ' ¢/kWh' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Elec. Rate</b></td><td ' + tdr + '>' + (elecRate != null ? elecRate + ' ¢/kWh' : 'N/A') + '</td></tr>';
 
-            // Find water rate
             var waterRate = p['Water Cost By State_Commercial Water Price ($/1000 gallons)']
                 || p['Europe Statistics_Commercial Water Rate ($/1000 gallons)']
                 || p['Canada Statistics_Commercial Water Rate ($/1000 gallons)']
                 || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Water Rate ($/1000 gallons)'];
-            if (waterRate != null) {
-                html += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right;padding:3px 0;">$' + waterRate + '/1000 gal</td></tr>';
-            }
+            html += '<tr><td ' + td + '><b>Water Rate</b></td><td ' + tdr + '>' + (waterRate != null ? '$' + waterRate + '/1000 gal' : 'N/A') + '</td></tr>';
 
-            // Find regulations
             var regs = p['Regulations_Regulations:']
                 || p['Europe Statistics_Regulations']
                 || p['Canada Statistics_Regulations']
                 || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Regulations'];
+            var regDisplay = 'None';
             if (regs) {
                 var regCount = regs.split('\n').filter(function(r) { return r.trim(); }).length;
-                html += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right;padding:3px 0;">' + regCount + ' active</td></tr>';
+                regDisplay = regCount + ' active';
             }
+            html += '<tr><td ' + td + '><b>Regulations</b></td><td ' + tdr + '>' + regDisplay + '</td></tr>';
 
-            // Vigilent Analysis section (composite scoring)
-            if (p['composite_score'] != null) {
-                var score = p['composite_score'];
-                var scoreColor = score >= 75 ? '#25ac01' : (score >= 50 ? '#1075E8' : '#888');
-                html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#1b285b;">Vigilent Analysis</b></td></tr>';
-                html += '<tr><td style="padding:3px 0;"><b>Composite Score</b></td><td style="text-align:right;padding:3px 0;"><span style="font-size:15px;font-weight:700;color:' + scoreColor + ';">' + score.toFixed(1) + '</span>/100</td></tr>';
-                html += '<tr><td style="padding:3px 0;"><b>Classification</b></td><td style="text-align:right;padding:3px 0;font-weight:600;color:' + scoreColor + ';">' + (p['vigilent_classification'] || '') + '</td></tr>';
-                if (p['savings_per_mw'] != null) {
-                    html += '<tr><td style="padding:3px 0;"><b>Savings/MW</b></td><td style="text-align:right;padding:3px 0;">$' + Number(p['savings_per_mw']).toLocaleString() + '</td></tr>';
-                }
-                if (p['payback_years'] != null) {
-                    html += '<tr><td style="padding:3px 0;"><b>Payback</b></td><td style="text-align:right;padding:3px 0;">' + p['payback_years'].toFixed(2) + ' yr</td></tr>';
-                }
-            }
+            // --- Vigilent Analysis (always shown — all DCs are now scored) ---
+            var score = p['composite_score'];
+            var scoreColor = score >= 75 ? '#25ac01' : (score >= 50 ? '#1075E8' : (score >= 25 ? '#e68a00' : '#888'));
+            html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#1b285b;">Vigilent Analysis</b></td></tr>';
+            html += '<tr><td ' + td + '><b>Composite Score</b></td><td ' + tdr + '><span style="font-size:15px;font-weight:700;color:' + scoreColor + ';">' + (score != null ? score.toFixed(1) : 'N/A') + '</span>' + (score != null ? '/100' : '') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Classification</b></td><td ' + tdr + ' style="text-align:right;padding:3px 0;font-weight:600;color:' + scoreColor + ';">' + (p['vigilent_classification'] || 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Savings/MW</b></td><td ' + tdr + '>' + (p['savings_per_mw'] != null ? '$' + Number(p['savings_per_mw']).toLocaleString() : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Payback</b></td><td ' + tdr + '>' + (p['payback_years'] != null ? p['payback_years'].toFixed(2) + ' yr' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>OPEX Impact</b></td><td ' + tdr + '>' + (p['impact_on_opex_pct'] != null ? p['impact_on_opex_pct'] + '%' : 'N/A') + '</td></tr>';
 
-            // EJ section (US only, where available)
+            // --- EJ section (where available) ---
             if (p['ej_demographic_index'] != null) {
                 html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Justice</b></td></tr>';
-                html += '<tr><td style="padding:3px 0;"><b>EJ Demo Index</b></td><td style="text-align:right;padding:3px 0;">' + p['ej_demographic_index'] + '</td></tr>';
-                if (p['co2_avoided_metric_tons'] != null) html += '<tr><td style="padding:3px 0;"><b>CO2 Avoided</b></td><td style="text-align:right;padding:3px 0;">' + Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr</td></tr>';
-                if (p['ej_energy_burden_pct'] != null) html += '<tr><td style="padding:3px 0;"><b>Energy Burden</b></td><td style="text-align:right;padding:3px 0;">' + p['ej_energy_burden_pct'] + '%</td></tr>';
+                html += '<tr><td ' + td + '><b>EJ Demo Index</b></td><td ' + tdr + '>' + p['ej_demographic_index'] + '</td></tr>';
+                html += '<tr><td ' + td + '><b>CO2 Avoided</b></td><td ' + tdr + '>' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr' : 'N/A') + '</td></tr>';
+                html += '<tr><td ' + td + '><b>Energy Burden</b></td><td ' + tdr + '>' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : 'N/A') + '</td></tr>';
             }
 
             html += '</table></div>';
