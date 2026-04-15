@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "description": "Single source of truth for Vigilent composite score inputs. Mirrored in Vigilent Calculator.xlsx → Inputs sheet and used by score_datacenters.py for provenance reporting.",
+    "source_of_truth_code": "vigilent_engine.py :: compute_score()"
+  },
+  "inputs": [
+    {"name": "dc_size_mw",          "units": "MW",      "category": "DC",       "default": null,    "source": "Vigilent DC database CSV → Size (MW)",    "real_or_estimated": "REAL"},
+    {"name": "baseline_pue",        "units": "ratio",   "category": "DC",       "default": 1.55,    "source": "Uptime Institute 2023 global average",    "real_or_estimated": "ESTIMATED"},
+    {"name": "electricity_price",   "units": "$/kWh",   "category": "DC",       "default": 0.12,    "source": "EIA state commercial electricity rates",  "real_or_estimated": "REAL_STATE_AVG"},
+    {"name": "load_growth_rate",    "units": "frac/yr", "category": "DC",       "default": 0.10,    "source": "Industry consensus (~10%)",               "real_or_estimated": "ESTIMATED"},
+    {"name": "energy_pct_opex",     "units": "frac",    "category": "DC",       "default": 0.40,    "source": "Gartner / McKinsey (~40%)",               "real_or_estimated": "ESTIMATED"},
+    {"name": "num_years",           "units": "yr",      "category": "Vigilent", "default": 1,       "source": "Analysis horizon",                         "real_or_estimated": "PARAM"},
+    {"name": "investment_cost",     "units": "$",       "category": "Vigilent", "default": 1500000, "source": "Vigilent standard offering",               "real_or_estimated": "PARAM"},
+    {"name": "energy_reduction_pct","units": "frac",    "category": "Vigilent", "default": 0.10,    "source": "Vigilent standard (10%)",                  "real_or_estimated": "PARAM"},
+    {"name": "water_reduction_pct", "units": "frac",    "category": "Vigilent", "default": 0.05,    "source": "Vigilent standard (5%)",                   "real_or_estimated": "PARAM"}
+  ],
+  "factors": [
+    {"name": "savings_per_mw",    "weight": 0.35, "min": 0, "max": 300000, "direction": "higher_better", "formula": "annual_savings / dc_size_mw"},
+    {"name": "water_savings_pct", "weight": 0.10, "min": 0, "max": 0.08,   "direction": "higher_better", "formula": "water_reduction_pct"},
+    {"name": "impact_on_opex",    "weight": 0.20, "min": 0, "max": 0.10,   "direction": "higher_better", "formula": "energy_reduction_pct * energy_pct_opex"},
+    {"name": "payback_period",    "weight": 0.25, "min": 0, "max": 5.0,    "direction": "INVERTED",      "formula": "investment_cost / annual_savings"},
+    {"name": "load_growth",       "weight": 0.10, "min": 0, "max": 0.15,   "direction": "higher_better", "formula": "load_growth_rate"}
+  ],
+  "what_if_ranges": {
+    "baseline_pue":     {"low": 1.20, "default": 1.55, "high": 1.80, "label": "Baseline PUE",     "note": "1.20 = best-in-class, 1.80 = legacy facility"},
+    "load_growth_rate": {"low": 0.05, "default": 0.10, "high": 0.15, "label": "Load Growth Rate",  "note": "5% = mature market, 15% = high-growth region"},
+    "energy_pct_opex":  {"low": 0.30, "default": 0.40, "high": 0.50, "label": "Energy % of OPEX",  "note": "30% = efficient ops, 50% = energy-heavy facility"}
+  }
+}

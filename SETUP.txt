@@ -1,11 +1,23 @@
 VIGILENT DATA CENTER SCORING & OPTIMIZATION TOOL
 =================================================
 
+TLDR (Mac) :
+1. Assuming you have python installed, unzip folder on your Desktop.
+
+2. Open terminal and run these commands (copy-paste them and run individually):
+	cd Desktop/Vigilent
+        pip install dash plotly python-pptx numpy requests openpyxl
+        python3 simulation.py
+
+3. Open the localhost link:
+	http://127.0.0.1:8050
+
+
 HOW TO DOWNLOAD AND RUN
 -----------------------
 
 STEP 1: Download the files
-    - Click the green "Code" button on the GitHub repo page: 
+    - Click the green "Code" button on the GitHub repo page (ignore if you have the ZIP file)
     - Click "Download ZIP"
     - Unzip the folder somewhere on your computer (e.g., your Desktop)
 

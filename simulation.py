@@ -35,6 +35,60 @@ from vigilent_engine import (
 
 GRID_SIZE = 50  # 50×50 heatmap cells
 
+# --- Inputs registry (single source of truth, mirrors Excel "Inputs" sheet) ---
+try:
+    with open("inputs_spec.json") as _f:
+        INPUTS_SPEC = json.load(_f)
+except FileNotFoundError:
+    INPUTS_SPEC = {"inputs": [], "factors": []}
+
+_BADGE_STYLE = {
+    "REAL":           {"bg": "#1b5e20", "fg": "#fff", "label": "REAL"},
+    "REAL_STATE_AVG": {"bg": "#2e7d32", "fg": "#fff", "label": "REAL (state avg)"},
+    "ESTIMATED":      {"bg": "#ef6c00", "fg": "#fff", "label": "ESTIMATED"},
+    "PARAM":          {"bg": "#1565c0", "fg": "#fff", "label": "VIGILENT PARAM"},
+}
+
+def _badge(kind):
+    s = _BADGE_STYLE.get(kind, {"bg":"#666","fg":"#fff","label":kind})
+    return html.Span(s["label"], style={
+        "background": s["bg"], "color": s["fg"], "padding": "2px 8px",
+        "borderRadius": "10px", "fontSize": "10px", "fontWeight": "700",
+        "letterSpacing": "0.3px",
+    })
+
+def _make_inputs_registry_table():
+    """Render the inputs_spec.json registry as a transparency table."""
+    if not INPUTS_SPEC.get("inputs"):
+        return html.Div()
+    rows = []
+    for inp in INPUTS_SPEC["inputs"]:
+        rows.append(html.Tr([
+            html.Td(inp["name"], style={"padding": "6px 12px", "fontFamily": "monospace",
+                                         "fontSize": "12px", "fontWeight": "600"}),
+            html.Td(inp["units"], style={"padding": "6px 12px", "fontSize": "12px"}),
+            html.Td(str(inp.get("default", "")), style={"padding": "6px 12px", "fontSize": "12px"}),
+            html.Td(_badge(inp["real_or_estimated"]), style={"padding": "6px 12px"}),
+            html.Td(inp["source"], style={"padding": "6px 12px", "fontSize": "12px", "color": "#444"}),
+        ]))
+    return html.Div([
+        html.P([html.B("Inputs Registry — every variable, its source, and whether it's real or estimated:")],
+               style={"fontSize": "13px", "marginTop": "8px", "marginBottom": "8px"}),
+        html.Table([
+            html.Thead(html.Tr([
+                html.Th(h, style={"padding": "8px 12px", "background": "#E0F2F1",
+                                  "textAlign": "left", "fontSize": "12px"})
+                for h in ["Input", "Units", "Default", "Provenance", "Source"]
+            ])),
+            html.Tbody(rows),
+        ], style={"width": "100%", "borderCollapse": "collapse", "marginBottom": "16px"}),
+        html.P([
+            html.B("Note: "),
+            "Inputs flagged ESTIMATED use industry averages because they are not present in the DC database CSV. ",
+            "Per-DC backfill of baseline_pue, load_growth_rate, and energy_pct_opex would convert these to REAL.",
+        ], style={"fontSize": "12px", "color": "#666", "fontStyle": "italic", "marginBottom": "10px"}),
+    ])
+
 # Axis-eligible parameters (non-Vigilent only)
 AXIS_OPTIONS = [
     {"label": DC_PARAMS[k]["label"], "value": k}
@@ -100,6 +154,58 @@ DC_MARKETS = {
 # ═══════════════════════════════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════════════════════════════
+
+def _make_methodology_section(title, formulas, sources, extra_content=None):
+    """Create a collapsible methodology panel matching the EJ Calculator style."""
+    formula_blocks = [
+        html.P([
+            html.B(f[0]), f" = {f[1]}",
+        ], style={"fontSize": "13px", "fontFamily": "monospace", "background": "#f5f6fa",
+                  "padding": "8px 12px", "borderRadius": "4px", "marginBottom": "6px"})
+        for f in formulas
+    ]
+    if formulas:
+        formula_blocks[-1] = html.P([
+            html.B(formulas[-1][0]), f" = {formulas[-1][1]}",
+        ], style={"fontSize": "13px", "fontFamily": "monospace", "background": "#f5f6fa",
+                  "padding": "8px 12px", "borderRadius": "4px", "marginBottom": "14px"})
+
+    source_rows = [
+        html.Tr([
+            html.Td(s[0], style={"padding": "6px 12px", "fontWeight": "600", "fontSize": "13px"}),
+            html.Td(s[1], style={"padding": "6px 12px", "fontSize": "13px"}),
+            html.Td(s[2], style={"padding": "6px 12px", "fontSize": "12px", "color": "#666"}),
+        ]) for s in sources
+    ]
+
+    children = list(formula_blocks)
+    if extra_content:
+        children.extend(extra_content)
+    if sources:
+        children.append(
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th("Category", style={"padding": "8px 12px", "background": "#E0F2F1",
+                                                "textAlign": "left", "fontSize": "12px"}),
+                    html.Th("Source / Detail", style={"padding": "8px 12px", "background": "#E0F2F1",
+                                                      "textAlign": "left", "fontSize": "12px"}),
+                    html.Th("Notes", style={"padding": "8px 12px", "background": "#E0F2F1",
+                                              "textAlign": "left", "fontSize": "12px"}),
+                ])),
+                html.Tbody(source_rows),
+            ], style={"width": "100%", "borderCollapse": "collapse"}),
+        )
+
+    return html.Div([
+        html.Details([
+            html.Summary(title,
+                         style={"fontWeight": "600", "fontSize": "15px", "color": "#1b285b",
+                                "cursor": "pointer", "marginBottom": "12px"}),
+            html.Div(children),
+        ]),
+    ], style={"background": "white", "borderRadius": "10px", "padding": "18px 22px",
+              "boxShadow": "0 1px 8px rgba(0,0,0,0.07)", "marginBottom": "20px"})
+
 
 def _fmt_val(key: str, val: float) -> str:
     """Format a parameter value for display."""
@@ -605,11 +711,51 @@ sim_bottom_bar = html.Div([
 ], style={"padding": "8px 20px", "borderTop": "1px solid #ddd",
           "backgroundColor": "#f8f9fa", "minHeight": "36px"})
 
+# --- Simulator methodology panel ---
+sim_methodology = _make_methodology_section(
+    title="How the Simulator Works — Inputs, Formulas & Scoring",
+    formulas=[
+        ("Total Power", "DC Size (MW) x Baseline PUE"),
+        ("Annual Energy (kWh)", "Total Power x 1,000 x 8,760 hours x (1 + Load Growth Rate)"),
+        ("Annual Energy Cost", "Annual Energy (kWh) x Electricity Price ($/kWh)"),
+        ("Estimated Savings", "Annual Energy Cost x Vigilent Energy Reduction %"),
+        ("Savings per MW", "Estimated Savings / DC Size (MW)"),
+        ("Payback Period", "Vigilent Investment Cost / Estimated Savings"),
+        ("OPEX Impact", "Energy Reduction % x Energy % of OPEX"),
+    ],
+    sources=[
+        ("Savings per MW", "Weight: 35% | Max threshold: $300,000",
+         "Higher savings per MW = better fit for Vigilent"),
+        ("Payback Period", "Weight: 25% | Max threshold: 5.0 years (INVERTED)",
+         "Shorter payback = higher score. Inverted: score = (1 - payback/max) x 100"),
+        ("OPEX Impact", "Weight: 20% | Max threshold: 10%",
+         "Larger share of OPEX reduced = stronger business case"),
+        ("Water Savings", "Weight: 10% | Max threshold: 8%",
+         "Set by Vigilent Water Reduction % parameter"),
+        ("Load Growth", "Weight: 10% | Max threshold: 15%",
+         "Growing load = more future savings from efficiency"),
+    ],
+    extra_content=[
+        _make_inputs_registry_table(),
+        html.P([
+            html.B("Composite Score"), " = Weighted sum of 5 normalized factor scores (each 0-100). "
+            "Factors are linearly scaled between their min (0) and max threshold (100). "
+            "Scores above 75 indicate a strong Vigilent fit.",
+        ], style={"fontSize": "13px", "color": "#444", "marginBottom": "14px", "lineHeight": "1.6"}),
+        html.P([
+            html.B("Heatmap: "), "Each cell shows the composite score for a specific (X, Y) combination "
+            "while all other parameters are held at the slider values on the right panel.",
+        ], style={"fontSize": "13px", "color": "#444", "marginBottom": "14px", "lineHeight": "1.6"}),
+    ],
+)
+
 # --- Full simulator tab content ---
 simulator_content = html.Div([
     html.Div([sim_left_panel, sim_center_panel, sim_right_panel],
              style={"display": "flex", "flex": "1", "overflow": "hidden"}),
     sim_bottom_bar,
+    html.Div([sim_methodology],
+             style={"padding": "16px 24px", "background": "#f5f6fa"}),
 ], style={"display": "flex", "flexDirection": "column", "flex": "1"})
 
 
@@ -757,6 +903,44 @@ optimizer_content = html.Div([
             ], style={"marginTop": "20px"}),
         ], style={"width": "100%", "maxWidth": "750px"}),
     ], style={"padding": "24px 30px"}),
+
+    # --- Optimizer methodology ---
+    html.Div([
+        _make_methodology_section(
+            title="How the Optimizer Works — Method & Interpretation",
+            formulas=[
+                ("Objective", "Maximize Composite Score over 5 DC parameters"),
+                ("Method", "Differential Evolution (scipy) — global search, 300 iterations, seed=42"),
+                ("Search Space", "DC Size (1-200 MW), PUE (1.0-2.5), Elec Price ($0.01-$0.50), "
+                 "Load Growth (0-30%), Energy OPEX (5-80%)"),
+            ],
+            sources=[
+                ("Differential Evolution", "scipy.optimize.differential_evolution",
+                 "Stochastic global optimizer — does not get stuck in local optima"),
+                ("Sensitivity Analysis", "One-at-a-time sweep",
+                 "Each DC parameter swept across its full range while others held at optimal"),
+                ("Sweet Spot Ranges", "Threshold-based sweep",
+                 "Min/max values where score stays >= threshold, holding others at optimal"),
+                ("Location Matching", "OpenEI Utility Rate Database API",
+                 "When enabled, finds real utility rates near the optimal electricity price"),
+            ],
+            extra_content=[
+                _make_inputs_registry_table(),
+                html.P([
+                    html.B("Scoring Config Table: "), "Weights must sum to 1.0. "
+                    "The Max column sets the threshold where a factor scores 100/100. "
+                    "You can adjust weights and thresholds to model different priorities.",
+                ], style={"fontSize": "13px", "color": "#444", "marginBottom": "14px",
+                          "lineHeight": "1.6"}),
+                html.P([
+                    html.B("Output: "), "The 'optimal DC profile' is the combination of 5 DC parameters "
+                    "that produces the highest composite score under your Vigilent assumptions. "
+                    "It tells you which type of data center benefits most from Vigilent.",
+                ], style={"fontSize": "13px", "color": "#444", "marginBottom": "14px",
+                          "lineHeight": "1.6"}),
+            ],
+        ),
+    ], style={"padding": "0 30px 10px 30px"}),
 
     # --- Results area ---
     html.Div(id="opt-results",
@@ -938,6 +1122,34 @@ finder_content = html.Div([
             html.Div(id="finder-status",
                      style={"marginTop": "10px", "fontSize": "13px", "color": "#666"}),
         ], className="opt-section"),
+
+        # --- DC Finder methodology ---
+        _make_methodology_section(
+            title="How the DC Finder Works — Exhaustive Sweep & Tradeoffs",
+            formulas=[
+                ("Sweep", "15 steps per DC parameter = 15^5 = 759,375 combinations tested"),
+                ("Feasibility %", "Count of combinations scoring >= threshold / total combinations x 100"),
+                ("Target Ranges", "Per parameter: min & max values where at least one combo passes"),
+                ("Tradeoff Heatmap", "For each (Param A, Param B) pair: % of remaining 3-param combos that pass"),
+            ],
+            sources=[
+                ("5D Sweep", "Vectorized NumPy broadcasting",
+                 "All 759K combos scored in ~1 second using array math, not loops"),
+                ("Threshold", "User-selected: 50 (Moderate), 75 (Good), 90 (Excellent)",
+                 "Higher threshold = stricter filter = fewer qualifying profiles"),
+                ("Flexibility Bar", "% of parameter range that passes",
+                 "100% = parameter doesn't constrain the result at all"),
+            ],
+            extra_content=[
+                _make_inputs_registry_table(),
+                html.P([
+                    html.B("Key difference from Simulator: "), "The Simulator holds 3 parameters constant "
+                    "and sweeps 2. The DC Finder sweeps all 5 simultaneously, revealing the full space "
+                    "of qualifying data center profiles.",
+                ], style={"fontSize": "13px", "color": "#444", "marginBottom": "14px",
+                          "lineHeight": "1.6"}),
+            ],
+        ),
 
         # --- Results area ---
         html.Div(id="finder-results",

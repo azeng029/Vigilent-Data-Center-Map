@@ -1,1 +1,9 @@
 __pycache__/
+credentials.json
+token.json
+cso_contacts.csv
+qgis2web_2026_04_01-14_53_08_869925/data/originals/
+*.xlsx
+*.zip
+beacn-outreach-kit/
+.DS_Store
