@@ -1,0 +1,2604 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/MarkerCluster.css">
+        <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Vigilent Data Center Map</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet.markercluster.js"></script>
+        <script src="data/WorldMap_0.js"></script>
+        <script src="data/BrazilCompositeScore_1.js"></script>
+        <script src="data/BrazilRegulationsByQuantity_2.js"></script>
+        <script src="data/BrazilCommercialElectricityRateskWh_3.js"></script>
+        <script src="data/BrazilCommercialWaterRates1000gallons_4.js"></script>
+        <script src="data/BrazilOutlineMap_5.js"></script>
+        <script src="data/CanadaCompositeScore_6.js"></script>
+        <script src="data/CanadaRegulationsByQuantity_7.js"></script>
+        <script src="data/CanadaCommercialElectricityRatekWh_8.js"></script>
+        <script src="data/CanadaCommercialWaterRate1000gallons_9.js"></script>
+        <script src="data/CanadaOutlineMap_10.js"></script>
+        <script src="data/EuropeCompositeScore_11.js"></script>
+        <script src="data/EuropeRegulationsByQuantity_12.js"></script>
+        <script src="data/EuropeCommercialElectricityRateskWh_13.js"></script>
+        <script src="data/EuropeCommercialWaterRates1000gallons_14.js"></script>
+        <script src="data/USCompositeScore_15.js"></script>
+        <script src="data/USRegulationsByQuantity_16.js"></script>
+        <script src="data/USCommercialElectricityRateskWh_17.js"></script>
+        <script src="data/USCommercialWaterRates1000gallons_18.js"></script>
+        <script src="data/VigilentDataCenterDatabaseBrazil_19.js"></script>
+        <script src="data/VigilentDataCenterDatabaseEurope_20.js"></script>
+        <script src="data/VigilentDataCenterDatabaseCanada_21.js"></script>
+        <script src="data/VigilentDataCenterDatabaseUS_22.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-4.0151388104335695,-153.752379172326],[85.73759822358907,-32.0818835913536]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        function pop_WorldMap_0(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">fid</th>\
+                        <td class="visible-with-data" id="fid">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">iso_a2</th>\
+                        <td class="visible-with-data" id="iso_a2">' + (feature.properties['iso_a2'] !== null ? autolinker.link(String(feature.properties['iso_a2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NAME</th>\
+                        <td class="visible-with-data" id="NAME">' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">FIPS_10_</th>\
+                        <td class="visible-with-data" id="FIPS_10_">' + (feature.properties['FIPS_10_'] !== null ? autolinker.link(String(feature.properties['FIPS_10_']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ISO_A3</th>\
+                        <td class="visible-with-data" id="ISO_A3">' + (feature.properties['ISO_A3'] !== null ? autolinker.link(String(feature.properties['ISO_A3']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">WB_A2</th>\
+                        <td class="visible-with-data" id="WB_A2">' + (feature.properties['WB_A2'] !== null ? autolinker.link(String(feature.properties['WB_A2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">WB_A3</th>\
+                        <td class="visible-with-data" id="WB_A3">' + (feature.properties['WB_A3'] !== null ? autolinker.link(String(feature.properties['WB_A3']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_WorldMap_0_0() {
+            return {
+                pane: 'pane_WorldMap_0',
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_WorldMap_0');
+        map.getPane('pane_WorldMap_0').style.zIndex = 400;
+        map.getPane('pane_WorldMap_0').style['mix-blend-mode'] = 'normal';
+        var layer_WorldMap_0 = new L.geoJson(json_WorldMap_0, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_WorldMap_0',
+            layerName: 'layer_WorldMap_0',
+            pane: 'pane_WorldMap_0',
+            onEachFeature: pop_WorldMap_0,
+            style: style_WorldMap_0_0,
+        });
+        bounds_group.addLayer(layer_WorldMap_0);
+        map.addLayer(layer_WorldMap_0);
+        function pop_BrazilCompositeScore_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="name" colspan="2"><strong>Name</strong><br />' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Regulations">' + (feature.properties['Brazil Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BrazilCompositeScore_1_0(feature) {
+            if (feature.properties['Composite'] >= 0.000000 && feature.properties['Composite'] <= 33.000000 ) {
+                return {
+                pane: 'pane_BrazilCompositeScore_1',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,252,245,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 33.000000 && feature.properties['Composite'] <= 67.000000 ) {
+                return {
+                pane: 'pane_BrazilCompositeScore_1',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,199,124,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 67.000000 && feature.properties['Composite'] <= 100.000000 ) {
+                return {
+                pane: 'pane_BrazilCompositeScore_1',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,68,27,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_BrazilCompositeScore_1');
+        map.getPane('pane_BrazilCompositeScore_1').style.zIndex = 401;
+        map.getPane('pane_BrazilCompositeScore_1').style['mix-blend-mode'] = 'normal';
+        var layer_BrazilCompositeScore_1 = new L.geoJson(json_BrazilCompositeScore_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BrazilCompositeScore_1',
+            layerName: 'layer_BrazilCompositeScore_1',
+            pane: 'pane_BrazilCompositeScore_1',
+            onEachFeature: pop_BrazilCompositeScore_1,
+            style: style_BrazilCompositeScore_1_0,
+        });
+        bounds_group.addLayer(layer_BrazilCompositeScore_1);
+        // layer_BrazilCompositeScore_1 not added by default (toggle on via layer control)
+        function pop_BrazilRegulationsByQuantity_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="name" colspan="2"><strong>Name</strong><br />' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Regulations">' + (feature.properties['Brazil Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BrazilRegulationsByQuantity_2_0(feature) {
+            var regText = feature.properties['Brazil Statistics_Regulations'] || '';
+            var regLen = regText.length;
+            if (regLen >= 0 && regLen <= 1) {
+                return {
+                pane: 'pane_BrazilRegulationsByQuantity_2',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 1 && regLen <= 10) {
+                return {
+                pane: 'pane_BrazilRegulationsByQuantity_2',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 10) {
+                return {
+                pane: 'pane_BrazilRegulationsByQuantity_2',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(19,114,255,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_BrazilRegulationsByQuantity_2');
+        map.getPane('pane_BrazilRegulationsByQuantity_2').style.zIndex = 402;
+        map.getPane('pane_BrazilRegulationsByQuantity_2').style['mix-blend-mode'] = 'normal';
+        var layer_BrazilRegulationsByQuantity_2 = new L.geoJson(json_BrazilRegulationsByQuantity_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BrazilRegulationsByQuantity_2',
+            layerName: 'layer_BrazilRegulationsByQuantity_2',
+            pane: 'pane_BrazilRegulationsByQuantity_2',
+            onEachFeature: pop_BrazilRegulationsByQuantity_2,
+            style: style_BrazilRegulationsByQuantity_2_0,
+        });
+        bounds_group.addLayer(layer_BrazilRegulationsByQuantity_2);
+        // layer_BrazilRegulationsByQuantity_2 not added by default
+        function pop_BrazilCommercialElectricityRateskWh_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="name" colspan="2"><strong>Name</strong><br />' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Regulations">' + (feature.properties['Brazil Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BrazilCommercialElectricityRateskWh_3_0(feature) {
+            if (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] >= 12.150000 && feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] <= 12.800000 ) {
+                return {
+                pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] >= 12.800000 && feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] <= 14.050000 ) {
+                return {
+                pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,204,92,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] >= 14.050000 && feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] <= 15.570000 ) {
+                return {
+                pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,141,60,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] >= 15.570000 && feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] <= 16.900000 ) {
+                return {
+                pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,59,32,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] >= 16.900000 && feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] <= 18.610000 ) {
+                return {
+                pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,0,38,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_BrazilCommercialElectricityRateskWh_3');
+        map.getPane('pane_BrazilCommercialElectricityRateskWh_3').style.zIndex = 403;
+        map.getPane('pane_BrazilCommercialElectricityRateskWh_3').style['mix-blend-mode'] = 'normal';
+        var layer_BrazilCommercialElectricityRateskWh_3 = new L.geoJson(json_BrazilCommercialElectricityRateskWh_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BrazilCommercialElectricityRateskWh_3',
+            layerName: 'layer_BrazilCommercialElectricityRateskWh_3',
+            pane: 'pane_BrazilCommercialElectricityRateskWh_3',
+            onEachFeature: pop_BrazilCommercialElectricityRateskWh_3,
+            style: style_BrazilCommercialElectricityRateskWh_3_0,
+        });
+        bounds_group.addLayer(layer_BrazilCommercialElectricityRateskWh_3);
+        // layer_BrazilCommercialElectricityRateskWh_3 not added by default
+        function pop_BrazilCommercialWaterRates1000gallons_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="name" colspan="2"><strong>Name</strong><br />' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Regulations">' + (feature.properties['Brazil Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BrazilCommercialWaterRates1000gallons_4_0(feature) {
+            if (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] >= 2.020000 && feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] <= 2.250000 ) {
+                return {
+                pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(185,185,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] >= 2.250000 && feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] <= 3.170000 ) {
+                return {
+                pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,220,240,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] >= 3.170000 && feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] <= 3.870000 ) {
+                return {
+                pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] >= 3.870000 && feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] <= 5.340000 ) {
+                return {
+                pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] >= 5.340000 && feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] <= 6.440000 ) {
+                return {
+                pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_BrazilCommercialWaterRates1000gallons_4');
+        map.getPane('pane_BrazilCommercialWaterRates1000gallons_4').style.zIndex = 404;
+        map.getPane('pane_BrazilCommercialWaterRates1000gallons_4').style['mix-blend-mode'] = 'normal';
+        var layer_BrazilCommercialWaterRates1000gallons_4 = new L.geoJson(json_BrazilCommercialWaterRates1000gallons_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BrazilCommercialWaterRates1000gallons_4',
+            layerName: 'layer_BrazilCommercialWaterRates1000gallons_4',
+            pane: 'pane_BrazilCommercialWaterRates1000gallons_4',
+            onEachFeature: pop_BrazilCommercialWaterRates1000gallons_4,
+            style: style_BrazilCommercialWaterRates1000gallons_4_0,
+        });
+        bounds_group.addLayer(layer_BrazilCommercialWaterRates1000gallons_4);
+        // layer_BrazilCommercialWaterRates1000gallons_4 not added by default
+        function pop_BrazilOutlineMap_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Name</th>\
+                        <td class="visible-with-data" id="name">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Brazil Statistics_Regulations">' + (feature.properties['Brazil Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Brazil Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_BrazilOutlineMap_5_0() {
+            return {
+                pane: 'pane_BrazilOutlineMap_5',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_BrazilOutlineMap_5');
+        map.getPane('pane_BrazilOutlineMap_5').style.zIndex = 405;
+        map.getPane('pane_BrazilOutlineMap_5').style['mix-blend-mode'] = 'normal';
+        var layer_BrazilOutlineMap_5 = new L.geoJson(json_BrazilOutlineMap_5, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_BrazilOutlineMap_5',
+            layerName: 'layer_BrazilOutlineMap_5',
+            pane: 'pane_BrazilOutlineMap_5',
+            onEachFeature: pop_BrazilOutlineMap_5,
+            style: style_BrazilOutlineMap_5_0,
+        });
+        bounds_group.addLayer(layer_BrazilOutlineMap_5);
+        map.addLayer(layer_BrazilOutlineMap_5);
+        function pop_CanadaCompositeScore_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="PRENAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['PRENAME'] !== null ? autolinker.link(String(feature.properties['PRENAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Regulations">' + (feature.properties['Canada Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CanadaCompositeScore_6_0(feature) {
+            if (feature.properties['Composite'] >= 0.000000 && feature.properties['Composite'] <= 33.000000 ) {
+                return {
+                pane: 'pane_CanadaCompositeScore_6',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,252,245,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 33.000000 && feature.properties['Composite'] <= 67.000000 ) {
+                return {
+                pane: 'pane_CanadaCompositeScore_6',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,199,124,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 67.000000 && feature.properties['Composite'] <= 100.000000 ) {
+                return {
+                pane: 'pane_CanadaCompositeScore_6',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,68,27,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_CanadaCompositeScore_6');
+        map.getPane('pane_CanadaCompositeScore_6').style.zIndex = 406;
+        map.getPane('pane_CanadaCompositeScore_6').style['mix-blend-mode'] = 'normal';
+        var layer_CanadaCompositeScore_6 = new L.geoJson(json_CanadaCompositeScore_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CanadaCompositeScore_6',
+            layerName: 'layer_CanadaCompositeScore_6',
+            pane: 'pane_CanadaCompositeScore_6',
+            onEachFeature: pop_CanadaCompositeScore_6,
+            style: style_CanadaCompositeScore_6_0,
+        });
+        bounds_group.addLayer(layer_CanadaCompositeScore_6);
+        // layer_CanadaCompositeScore_6 not added by default
+        function pop_CanadaRegulationsByQuantity_7(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="PRENAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['PRENAME'] !== null ? autolinker.link(String(feature.properties['PRENAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Regulations">' + (feature.properties['Canada Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CanadaRegulationsByQuantity_7_0(feature) {
+            var regText = feature.properties['Canada Statistics_Regulations'] || '';
+            var regLen = regText.length;
+            if (regLen >= 0 && regLen <= 1) {
+                return {
+                pane: 'pane_CanadaRegulationsByQuantity_7',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 1 && regLen <= 33) {
+                return {
+                pane: 'pane_CanadaRegulationsByQuantity_7',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 33) {
+                return {
+                pane: 'pane_CanadaRegulationsByQuantity_7',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(19,114,255,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_CanadaRegulationsByQuantity_7');
+        map.getPane('pane_CanadaRegulationsByQuantity_7').style.zIndex = 407;
+        map.getPane('pane_CanadaRegulationsByQuantity_7').style['mix-blend-mode'] = 'normal';
+        var layer_CanadaRegulationsByQuantity_7 = new L.geoJson(json_CanadaRegulationsByQuantity_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CanadaRegulationsByQuantity_7',
+            layerName: 'layer_CanadaRegulationsByQuantity_7',
+            pane: 'pane_CanadaRegulationsByQuantity_7',
+            onEachFeature: pop_CanadaRegulationsByQuantity_7,
+            style: style_CanadaRegulationsByQuantity_7_0,
+        });
+        bounds_group.addLayer(layer_CanadaRegulationsByQuantity_7);
+        // layer_CanadaRegulationsByQuantity_7 not added by default
+        function pop_CanadaCommercialElectricityRatekWh_8(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="PRENAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['PRENAME'] !== null ? autolinker.link(String(feature.properties['PRENAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Regulations">' + (feature.properties['Canada Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CanadaCommercialElectricityRatekWh_8_0(feature) {
+            if (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] >= 0.000000 && feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] <= 2.900000 ) {
+                return {
+                pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] >= 2.900000 && feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] <= 5.500000 ) {
+                return {
+                pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,204,92,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] >= 5.500000 && feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] <= 7.900000 ) {
+                return {
+                pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,141,60,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] >= 7.900000 && feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] <= 20.500000 ) {
+                return {
+                pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,59,32,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] >= 20.500000 && feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] <= 45.400000 ) {
+                return {
+                pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,0,38,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_CanadaCommercialElectricityRatekWh_8');
+        map.getPane('pane_CanadaCommercialElectricityRatekWh_8').style.zIndex = 408;
+        map.getPane('pane_CanadaCommercialElectricityRatekWh_8').style['mix-blend-mode'] = 'normal';
+        var layer_CanadaCommercialElectricityRatekWh_8 = new L.geoJson(json_CanadaCommercialElectricityRatekWh_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CanadaCommercialElectricityRatekWh_8',
+            layerName: 'layer_CanadaCommercialElectricityRatekWh_8',
+            pane: 'pane_CanadaCommercialElectricityRatekWh_8',
+            onEachFeature: pop_CanadaCommercialElectricityRatekWh_8,
+            style: style_CanadaCommercialElectricityRatekWh_8_0,
+        });
+        bounds_group.addLayer(layer_CanadaCommercialElectricityRatekWh_8);
+        // layer_CanadaCommercialElectricityRatekWh_8 not added by default
+        function pop_CanadaCommercialWaterRate1000gallons_9(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="PRENAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['PRENAME'] !== null ? autolinker.link(String(feature.properties['PRENAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Canada Statistics_Regulations">' + (feature.properties['Canada Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Canada Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CanadaCommercialWaterRate1000gallons_9_0(feature) {
+            if (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] >= 0.000000 && feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] <= 0.500000 ) {
+                return {
+                pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(185,185,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] >= 0.500000 && feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] <= 1.200000 ) {
+                return {
+                pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,220,240,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] >= 1.200000 && feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] <= 3.600000 ) {
+                return {
+                pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] >= 3.600000 && feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] <= 6.100000 ) {
+                return {
+                pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] >= 6.100000 && feature.properties['Canada Statistics_Commercial Water Rate ($/1000 gallons)'] <= 8.320000 ) {
+                return {
+                pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+                stroke: false,
+                color: 'rgba(120,120,120,0.0)',
+                weight: 0,
+                lineJoin: 'round',
+                lineCap: 'round',
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_CanadaCommercialWaterRate1000gallons_9');
+        map.getPane('pane_CanadaCommercialWaterRate1000gallons_9').style.zIndex = 409;
+        map.getPane('pane_CanadaCommercialWaterRate1000gallons_9').style['mix-blend-mode'] = 'normal';
+        var layer_CanadaCommercialWaterRate1000gallons_9 = new L.geoJson(json_CanadaCommercialWaterRate1000gallons_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_CanadaCommercialWaterRate1000gallons_9',
+            layerName: 'layer_CanadaCommercialWaterRate1000gallons_9',
+            pane: 'pane_CanadaCommercialWaterRate1000gallons_9',
+            onEachFeature: pop_CanadaCommercialWaterRate1000gallons_9,
+            style: style_CanadaCommercialWaterRate1000gallons_9_0,
+        });
+        bounds_group.addLayer(layer_CanadaCommercialWaterRate1000gallons_9);
+        // layer_CanadaCommercialWaterRate1000gallons_9 not added by default
+        function pop_CanadaOutlineMap_10(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">PRUID</th>\
+                        <td class="visible-with-data" id="PRUID">' + (feature.properties['PRUID'] !== null ? autolinker.link(String(feature.properties['PRUID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PRNAME</th>\
+                        <td class="visible-with-data" id="PRNAME">' + (feature.properties['PRNAME'] !== null ? autolinker.link(String(feature.properties['PRNAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PRENAME</th>\
+                        <td class="visible-with-data" id="PRENAME">' + (feature.properties['PRENAME'] !== null ? autolinker.link(String(feature.properties['PRENAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PRFNAME</th>\
+                        <td class="visible-with-data" id="PRFNAME">' + (feature.properties['PRFNAME'] !== null ? autolinker.link(String(feature.properties['PRFNAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PREABBR</th>\
+                        <td class="visible-with-data" id="PREABBR">' + (feature.properties['PREABBR'] !== null ? autolinker.link(String(feature.properties['PREABBR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PRFABBR</th>\
+                        <td class="visible-with-data" id="PRFABBR">' + (feature.properties['PRFABBR'] !== null ? autolinker.link(String(feature.properties['PRFABBR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_CanadaOutlineMap_10_0() {
+            return {
+                pane: 'pane_CanadaOutlineMap_10',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_CanadaOutlineMap_10');
+        map.getPane('pane_CanadaOutlineMap_10').style.zIndex = 410;
+        map.getPane('pane_CanadaOutlineMap_10').style['mix-blend-mode'] = 'normal';
+        var layer_CanadaOutlineMap_10 = new L.geoJson(json_CanadaOutlineMap_10, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_CanadaOutlineMap_10',
+            layerName: 'layer_CanadaOutlineMap_10',
+            pane: 'pane_CanadaOutlineMap_10',
+            onEachFeature: pop_CanadaOutlineMap_10,
+            style: style_CanadaOutlineMap_10_0,
+        });
+        bounds_group.addLayer(layer_CanadaOutlineMap_10);
+        map.addLayer(layer_CanadaOutlineMap_10);
+        function pop_EuropeCompositeScore_11(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Regulations">' + (feature.properties['Europe Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_EuropeCompositeScore_11_0(feature) {
+            if (feature.properties['Composite'] >= 0.000000 && feature.properties['Composite'] <= 33.000000 ) {
+                return {
+                pane: 'pane_EuropeCompositeScore_11',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,252,245,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 33.000000 && feature.properties['Composite'] <= 67.000000 ) {
+                return {
+                pane: 'pane_EuropeCompositeScore_11',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,199,124,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 67.000000 && feature.properties['Composite'] <= 100.000000 ) {
+                return {
+                pane: 'pane_EuropeCompositeScore_11',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,68,27,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_EuropeCompositeScore_11');
+        map.getPane('pane_EuropeCompositeScore_11').style.zIndex = 411;
+        map.getPane('pane_EuropeCompositeScore_11').style['mix-blend-mode'] = 'normal';
+        var layer_EuropeCompositeScore_11 = new L.geoJson(json_EuropeCompositeScore_11, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_EuropeCompositeScore_11',
+            layerName: 'layer_EuropeCompositeScore_11',
+            pane: 'pane_EuropeCompositeScore_11',
+            onEachFeature: pop_EuropeCompositeScore_11,
+            style: style_EuropeCompositeScore_11_0,
+        });
+        bounds_group.addLayer(layer_EuropeCompositeScore_11);
+        // layer_EuropeCompositeScore_11 not added by default
+        function pop_EuropeRegulationsByQuantity_12(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Regulations">' + (feature.properties['Europe Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_EuropeRegulationsByQuantity_12_0(feature) {
+            var regText = feature.properties['Europe Statistics_Regulations'] || '';
+            var regLen = regText.length;
+            if (regLen >= 0 && regLen <= 1) {
+                return {
+                pane: 'pane_EuropeRegulationsByQuantity_12',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 1 && regLen <= 10) {
+                return {
+                pane: 'pane_EuropeRegulationsByQuantity_12',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 10) {
+                return {
+                pane: 'pane_EuropeRegulationsByQuantity_12',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(19,114,255,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_EuropeRegulationsByQuantity_12');
+        map.getPane('pane_EuropeRegulationsByQuantity_12').style.zIndex = 412;
+        map.getPane('pane_EuropeRegulationsByQuantity_12').style['mix-blend-mode'] = 'normal';
+        var layer_EuropeRegulationsByQuantity_12 = new L.geoJson(json_EuropeRegulationsByQuantity_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_EuropeRegulationsByQuantity_12',
+            layerName: 'layer_EuropeRegulationsByQuantity_12',
+            pane: 'pane_EuropeRegulationsByQuantity_12',
+            onEachFeature: pop_EuropeRegulationsByQuantity_12,
+            style: style_EuropeRegulationsByQuantity_12_0,
+        });
+        bounds_group.addLayer(layer_EuropeRegulationsByQuantity_12);
+        // layer_EuropeRegulationsByQuantity_12 not added by default
+        function pop_EuropeCommercialElectricityRateskWh_13(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Regulations">' + (feature.properties['Europe Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_EuropeCommercialElectricityRateskWh_13_0(feature) {
+            if (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] >= 8.500000 && feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] <= 11.000000 ) {
+                return {
+                pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+                opacity: 1,
+                color: 'rgba(38,89,128,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] >= 11.000000 && feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] <= 16.000000 ) {
+                return {
+                pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+                opacity: 1,
+                color: 'rgba(38,89,128,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,204,92,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] >= 16.000000 && feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] <= 19.000000 ) {
+                return {
+                pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+                opacity: 1,
+                color: 'rgba(38,89,128,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,141,60,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] >= 19.000000 && feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] <= 25.000000 ) {
+                return {
+                pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+                opacity: 1,
+                color: 'rgba(38,89,128,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,59,32,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] >= 25.000000 && feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] <= 34.000000 ) {
+                return {
+                pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+                opacity: 1,
+                color: 'rgba(38,89,128,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,0,38,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_EuropeCommercialElectricityRateskWh_13');
+        map.getPane('pane_EuropeCommercialElectricityRateskWh_13').style.zIndex = 413;
+        map.getPane('pane_EuropeCommercialElectricityRateskWh_13').style['mix-blend-mode'] = 'normal';
+        var layer_EuropeCommercialElectricityRateskWh_13 = new L.geoJson(json_EuropeCommercialElectricityRateskWh_13, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_EuropeCommercialElectricityRateskWh_13',
+            layerName: 'layer_EuropeCommercialElectricityRateskWh_13',
+            pane: 'pane_EuropeCommercialElectricityRateskWh_13',
+            onEachFeature: pop_EuropeCommercialElectricityRateskWh_13,
+            style: style_EuropeCommercialElectricityRateskWh_13_0,
+        });
+        bounds_group.addLayer(layer_EuropeCommercialElectricityRateskWh_13);
+        // layer_EuropeCommercialElectricityRateskWh_13 not added by default
+        function pop_EuropeCommercialWaterRates1000gallons_14(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Electricity Rate (¢/kWh)">' + (feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Electricity Rate (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Commercial Water Rate ($/1000 gallons)">' + (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Europe Statistics_Regulations">' + (feature.properties['Europe Statistics_Regulations'] !== null ? autolinker.link(String(feature.properties['Europe Statistics_Regulations']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_EuropeCommercialWaterRates1000gallons_14_0(feature) {
+            if (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] >= 2.620000 && feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] <= 5.360000 ) {
+                return {
+                pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(171,171,171,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] >= 5.360000 && feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] <= 10.900000 ) {
+                return {
+                pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,220,240,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] >= 10.900000 && feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] <= 17.570000 ) {
+                return {
+                pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] >= 17.570000 && feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] <= 26.160000 ) {
+                return {
+                pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] >= 26.160000 && feature.properties['Europe Statistics_Commercial Water Rate ($/1000 gallons)'] <= 40.630000 ) {
+                return {
+                pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_EuropeCommercialWaterRates1000gallons_14');
+        map.getPane('pane_EuropeCommercialWaterRates1000gallons_14').style.zIndex = 414;
+        map.getPane('pane_EuropeCommercialWaterRates1000gallons_14').style['mix-blend-mode'] = 'normal';
+        var layer_EuropeCommercialWaterRates1000gallons_14 = new L.geoJson(json_EuropeCommercialWaterRates1000gallons_14, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_EuropeCommercialWaterRates1000gallons_14',
+            layerName: 'layer_EuropeCommercialWaterRates1000gallons_14',
+            pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
+            onEachFeature: pop_EuropeCommercialWaterRates1000gallons_14,
+            style: style_EuropeCommercialWaterRates1000gallons_14_0,
+        });
+        bounds_group.addLayer(layer_EuropeCommercialWaterRates1000gallons_14);
+        // layer_EuropeCommercialWaterRates1000gallons_14 not added by default
+        var usCompositeScoreLookup = {};
+        var usElectricityRateLookup = {};
+        var usWaterRateLookup = {};
+        var usRegulationsLookup = {};
+        var usStateNameByAbbr = {'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi','MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming'};
+        json_USCompositeScore_15.features.forEach(function(feature) {
+            if (feature.properties && feature.properties['NAME'] != null) {
+                var stateName = feature.properties['NAME'];
+                usCompositeScoreLookup[stateName] = feature.properties['Composite'];
+                usElectricityRateLookup[stateName] = feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'];
+                usWaterRateLookup[stateName] = feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'];
+                usRegulationsLookup[stateName] = feature.properties['Regulations_Regulations:'];
+            }
+        });
+        function resolveUSStateName(stateValue) {
+            return usStateNameByAbbr[stateValue] || stateValue;
+        }
+        function getUSCompositeScore(stateValue) {
+            var resolvedState = resolveUSStateName(stateValue);
+            return Object.prototype.hasOwnProperty.call(usCompositeScoreLookup, resolvedState)
+                ? usCompositeScoreLookup[resolvedState]
+                : null;
+        }
+        function getUSStateValue(lookup, stateValue) {
+            var resolvedState = resolveUSStateName(stateValue);
+            return Object.prototype.hasOwnProperty.call(lookup, resolvedState)
+                ? lookup[resolvedState]
+                : null;
+        }
+        function formatUSCompositeScore(stateName) {
+            var score = getUSCompositeScore(stateName);
+            return score != null ? autolinker.link(String(score).replace(/'/g, '\'').toLocaleString()) : '';
+        }
+        function formatRateValue(value, suffix, prefix) {
+            if (value == null || value === '') {
+                return 'N/A';
+            }
+            var numericValue = Number(value);
+            if (!isNaN(numericValue)) {
+                return (prefix || '') + numericValue.toFixed(2) + (suffix || '');
+            }
+            return (prefix || '') + value + (suffix || '');
+        }
+        function formatRegulationsText(value, region, stateAbbr) {
+            if (value == null) {
+                return 'None';
+            }
+            var text = String(value).replace(/\r/g, '').trim();
+            if (!text) {
+                return 'None';
+            }
+            var parts = text.split(/\n+/).map(function(part) { return part.trim(); }).filter(Boolean);
+            if (parts.length <= 1 && region === 'us' && stateAbbr) {
+                var escapedAbbr = stateAbbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                parts = text.split(new RegExp('(?=' + escapedAbbr + '\\s)', 'g')).map(function(part) { return part.trim(); }).filter(Boolean);
+            }
+            if (parts.length <= 1) {
+                parts = text.split(/\s{2,}|;\s*/).map(function(part) { return part.trim(); }).filter(Boolean);
+            }
+            return parts.length ? parts.join('; ') : 'None';
+        }
+        function pop_USCompositeScore_15(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Electricity By State_Commercial Electricity Rate Per State (¢/kWh)">' + (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Water Cost By State_Commercial Water Price ($/1000 gallons)">' + (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Regulations_Regulations:">' + (feature.properties['Regulations_Regulations:'] !== null ? autolinker.link(String(feature.properties['Regulations_Regulations:']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_USCompositeScore_15_0(feature) {
+            if (feature.properties['Composite'] >= 0.000000 && feature.properties['Composite'] <= 33.000000 ) {
+                return {
+                pane: 'pane_USCompositeScore_15',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,252,245,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 33.000000 && feature.properties['Composite'] <= 67.000000 ) {
+                return {
+                pane: 'pane_USCompositeScore_15',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(123,199,124,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Composite'] >= 67.000000 && feature.properties['Composite'] <= 100.000000 ) {
+                return {
+                pane: 'pane_USCompositeScore_15',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,68,27,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_USCompositeScore_15');
+        map.getPane('pane_USCompositeScore_15').style.zIndex = 415;
+        map.getPane('pane_USCompositeScore_15').style['mix-blend-mode'] = 'normal';
+        var layer_USCompositeScore_15 = new L.geoJson(json_USCompositeScore_15, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_USCompositeScore_15',
+            layerName: 'layer_USCompositeScore_15',
+            pane: 'pane_USCompositeScore_15',
+            onEachFeature: pop_USCompositeScore_15,
+            style: style_USCompositeScore_15_0,
+        });
+        bounds_group.addLayer(layer_USCompositeScore_15);
+        function pop_USRegulationsByQuantity_16(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Electricity By State_Commercial Electricity Rate Per State (¢/kWh)">' + (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Water Cost By State_Commercial Water Price ($/1000 gallons)">' + (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Regulations_Regulations:">' + (feature.properties['Regulations_Regulations:'] !== null ? autolinker.link(String(feature.properties['Regulations_Regulations:']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_USRegulationsByQuantity_16_0(feature) {
+            var regText = feature.properties['Regulations_Regulations:'] || '';
+            var regLen = regText.length;
+            if (regLen >= 0 && regLen <= 1) {
+                return {
+                pane: 'pane_USRegulationsByQuantity_16',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,251,255,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 1 && regLen <= 10) {
+                return {
+                pane: 'pane_USRegulationsByQuantity_16',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (regLen >= 10) {
+                return {
+                pane: 'pane_USRegulationsByQuantity_16',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,103,255,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_USRegulationsByQuantity_16');
+        map.getPane('pane_USRegulationsByQuantity_16').style.zIndex = 416;
+        map.getPane('pane_USRegulationsByQuantity_16').style['mix-blend-mode'] = 'normal';
+        var layer_USRegulationsByQuantity_16 = new L.geoJson(json_USRegulationsByQuantity_16, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_USRegulationsByQuantity_16',
+            layerName: 'layer_USRegulationsByQuantity_16',
+            pane: 'pane_USRegulationsByQuantity_16',
+            onEachFeature: pop_USRegulationsByQuantity_16,
+            style: style_USRegulationsByQuantity_16_0,
+        });
+        bounds_group.addLayer(layer_USRegulationsByQuantity_16);
+        // layer_USRegulationsByQuantity_16 not added by default
+        function pop_USCommercialElectricityRateskWh_17(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Electricity By State_Commercial Electricity Rate Per State (¢/kWh)">' + (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Water Cost By State_Commercial Water Price ($/1000 gallons)">' + (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Regulations_Regulations:">' + (feature.properties['Regulations_Regulations:'] !== null ? autolinker.link(String(feature.properties['Regulations_Regulations:']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_USCommercialElectricityRateskWh_17_0(feature) {
+            if (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] >= 7.440000 && feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] <= 11.650000 ) {
+                return {
+                pane: 'pane_USCommercialElectricityRateskWh_17',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,0,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] >= 11.650000 && feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] <= 15.180000 ) {
+                return {
+                pane: 'pane_USCommercialElectricityRateskWh_17',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,204,92,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] >= 15.180000 && feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] <= 20.540000 ) {
+                return {
+                pane: 'pane_USCommercialElectricityRateskWh_17',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,141,60,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] >= 20.540000 && feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] <= 29.400000 ) {
+                return {
+                pane: 'pane_USCommercialElectricityRateskWh_17',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,59,32,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] >= 29.400000 && feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] <= 38.790000 ) {
+                return {
+                pane: 'pane_USCommercialElectricityRateskWh_17',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,0,38,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_USCommercialElectricityRateskWh_17');
+        map.getPane('pane_USCommercialElectricityRateskWh_17').style.zIndex = 417;
+        map.getPane('pane_USCommercialElectricityRateskWh_17').style['mix-blend-mode'] = 'normal';
+        var layer_USCommercialElectricityRateskWh_17 = new L.geoJson(json_USCommercialElectricityRateskWh_17, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_USCommercialElectricityRateskWh_17',
+            layerName: 'layer_USCommercialElectricityRateskWh_17',
+            pane: 'pane_USCommercialElectricityRateskWh_17',
+            onEachFeature: pop_USCommercialElectricityRateskWh_17,
+            style: style_USCommercialElectricityRateskWh_17_0,
+        });
+        bounds_group.addLayer(layer_USCommercialElectricityRateskWh_17);
+        // Startup metric layers are added via switchMetricGroup below.
+        function pop_USCommercialWaterRates1000gallons_18(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td class="visible-with-data" id="NAME" colspan="2"><strong>Name</strong><br />' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Electricity Rate (¢/kWh)</th>\
+                        <td class="visible-with-data" id="Electricity By State_Commercial Electricity Rate Per State (¢/kWh)">' + (feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'] !== null ? autolinker.link(String(feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Commercial Water Rate ($/1000 gallons)</th>\
+                        <td class="visible-with-data" id="Water Cost By State_Commercial Water Price ($/1000 gallons)">' + (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] !== null ? autolinker.link(String(feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Regulations</th>\
+                        <td class="visible-with-data" id="Regulations_Regulations:">' + (feature.properties['Regulations_Regulations:'] !== null ? autolinker.link(String(feature.properties['Regulations_Regulations:']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Composite Score</th>\
+                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_USCommercialWaterRates1000gallons_18_0(feature) {
+            if (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] >= 5.100000 && feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] <= 8.700000 ) {
+                return {
+                pane: 'pane_USCommercialWaterRates1000gallons_18',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(185,185,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] >= 8.700000 && feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] <= 12.000000 ) {
+                return {
+                pane: 'pane_USCommercialWaterRates1000gallons_18',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(189,201,225,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] >= 12.000000 && feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] <= 15.800000 ) {
+                return {
+                pane: 'pane_USCommercialWaterRates1000gallons_18',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(115,178,216,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] >= 15.800000 && feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] <= 19.600000 ) {
+                return {
+                pane: 'pane_USCommercialWaterRates1000gallons_18',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(41,121,185,0.75)',
+                interactive: true,
+            }
+            }
+            if (feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] >= 19.600000 && feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'] <= 22.940000 ) {
+                return {
+                pane: 'pane_USCommercialWaterRates1000gallons_18',
+                opacity: 1,
+                color: 'rgba(0,0,0,0.75)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(8,48,107,0.75)',
+                interactive: true,
+            }
+            }
+        }
+        map.createPane('pane_USCommercialWaterRates1000gallons_18');
+        map.getPane('pane_USCommercialWaterRates1000gallons_18').style.zIndex = 418;
+        map.getPane('pane_USCommercialWaterRates1000gallons_18').style['mix-blend-mode'] = 'normal';
+        var layer_USCommercialWaterRates1000gallons_18 = new L.geoJson(json_USCommercialWaterRates1000gallons_18, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_USCommercialWaterRates1000gallons_18',
+            layerName: 'layer_USCommercialWaterRates1000gallons_18',
+            pane: 'pane_USCommercialWaterRates1000gallons_18',
+            onEachFeature: pop_USCommercialWaterRates1000gallons_18,
+            style: style_USCommercialWaterRates1000gallons_18_0,
+        });
+        bounds_group.addLayer(layer_USCommercialWaterRates1000gallons_18);
+        // layer_USCommercialWaterRates1000gallons_18 not added by default
+        function pop_VigilentDataCenterDatabaseBrazil_19(feature, layer) {
+            var p = feature.properties;
+            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
+            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['State/Province'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
+            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Regulations'], 'brazil') + '</td></tr>';
+            var comp = p['Brazil Commercial Electricity Rates (¢/kWh)_Composite'];
+            if (comp != null) {
+                var scoreColor = comp >= 75 ? '#25ac01' : (comp >= 50 ? '#1075E8' : '#888');
+                popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#1b285b;">Regional Composite</b></td></tr>';
+                popupContent += '<tr><td style="padding:3px 0;"><b>Composite Score</b></td><td style="text-align:right; padding:3px 0;"><span style="font-size:15px; font-weight:700; color:' + scoreColor + ';">' + Number(comp).toFixed(1) + '</span>/100</td></tr>';
+            }
+            popupContent += '</table></div>';
+            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
+        }
+
+        function style_VigilentDataCenterDatabaseBrazil_19_0() {
+            return {
+                pane: 'pane_VigilentDataCenterDatabaseBrazil_19',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,176,74,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_VigilentDataCenterDatabaseBrazil_19');
+        map.getPane('pane_VigilentDataCenterDatabaseBrazil_19').style.zIndex = 419;
+        map.getPane('pane_VigilentDataCenterDatabaseBrazil_19').style['mix-blend-mode'] = 'normal';
+        var layer_VigilentDataCenterDatabaseBrazil_19 = new L.geoJson(json_VigilentDataCenterDatabaseBrazil_19, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VigilentDataCenterDatabaseBrazil_19',
+            layerName: 'layer_VigilentDataCenterDatabaseBrazil_19',
+            pane: 'pane_VigilentDataCenterDatabaseBrazil_19',
+            onEachFeature: pop_VigilentDataCenterDatabaseBrazil_19,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseBrazil_19_0(feature));
+            },
+        });
+        var cluster_VigilentDataCenterDatabaseBrazil_19 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_VigilentDataCenterDatabaseBrazil_19.addLayer(layer_VigilentDataCenterDatabaseBrazil_19);
+
+        bounds_group.addLayer(layer_VigilentDataCenterDatabaseBrazil_19);
+        cluster_VigilentDataCenterDatabaseBrazil_19.addTo(map);
+        function pop_VigilentDataCenterDatabaseEurope_20(feature, layer) {
+            var p = feature.properties;
+            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
+            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['Country'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
+            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Europe Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Europe Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Europe Statistics_Regulations'], 'europe') + '</td></tr>';
+            popupContent += '</table></div>';
+            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
+        }
+
+        function style_VigilentDataCenterDatabaseEurope_20_0() {
+            return {
+                pane: 'pane_VigilentDataCenterDatabaseEurope_20',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,176,74,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_VigilentDataCenterDatabaseEurope_20');
+        map.getPane('pane_VigilentDataCenterDatabaseEurope_20').style.zIndex = 420;
+        map.getPane('pane_VigilentDataCenterDatabaseEurope_20').style['mix-blend-mode'] = 'normal';
+        var layer_VigilentDataCenterDatabaseEurope_20 = new L.geoJson(json_VigilentDataCenterDatabaseEurope_20, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VigilentDataCenterDatabaseEurope_20',
+            layerName: 'layer_VigilentDataCenterDatabaseEurope_20',
+            pane: 'pane_VigilentDataCenterDatabaseEurope_20',
+            onEachFeature: pop_VigilentDataCenterDatabaseEurope_20,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseEurope_20_0(feature));
+            },
+        });
+        var cluster_VigilentDataCenterDatabaseEurope_20 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_VigilentDataCenterDatabaseEurope_20.addLayer(layer_VigilentDataCenterDatabaseEurope_20);
+
+        bounds_group.addLayer(layer_VigilentDataCenterDatabaseEurope_20);
+        cluster_VigilentDataCenterDatabaseEurope_20.addTo(map);
+        function pop_VigilentDataCenterDatabaseCanada_21(feature, layer) {
+            var p = feature.properties;
+            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
+            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['State/Province'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
+            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Canada Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Canada Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Canada Statistics_Regulations'], 'canada') + '</td></tr>';
+            popupContent += '</table></div>';
+            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
+        }
+
+        function style_VigilentDataCenterDatabaseCanada_21_0() {
+            return {
+                pane: 'pane_VigilentDataCenterDatabaseCanada_21',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(61,128,53,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,176,74,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_VigilentDataCenterDatabaseCanada_21');
+        map.getPane('pane_VigilentDataCenterDatabaseCanada_21').style.zIndex = 421;
+        map.getPane('pane_VigilentDataCenterDatabaseCanada_21').style['mix-blend-mode'] = 'normal';
+        var layer_VigilentDataCenterDatabaseCanada_21 = new L.geoJson(json_VigilentDataCenterDatabaseCanada_21, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VigilentDataCenterDatabaseCanada_21',
+            layerName: 'layer_VigilentDataCenterDatabaseCanada_21',
+            pane: 'pane_VigilentDataCenterDatabaseCanada_21',
+            onEachFeature: pop_VigilentDataCenterDatabaseCanada_21,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseCanada_21_0(feature));
+            },
+        });
+        var cluster_VigilentDataCenterDatabaseCanada_21 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_VigilentDataCenterDatabaseCanada_21.addLayer(layer_VigilentDataCenterDatabaseCanada_21);
+
+        bounds_group.addLayer(layer_VigilentDataCenterDatabaseCanada_21);
+        function pop_VigilentDataCenterDatabaseUS_22(feature, layer) {
+            var p = feature.properties;
+            var stateName = p['State/Province (Name)'];
+            var stateAbbr = p['State Abv'];
+            var stateCompositeScore = getUSCompositeScore(stateName);
+            var stateElectricityRate = getUSStateValue(usElectricityRateLookup, stateName);
+            var stateWaterRate = getUSStateValue(usWaterRateLookup, stateName);
+            var stateRegulations = getUSStateValue(usRegulationsLookup, stateName);
+            var vigilentTargetScore = p['composite_score'];
+            var targetScoreColor = '#1075E8';
+            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
+            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (stateAbbr || '') + '</div>';
+            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
+            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(stateElectricityRate, ' ¢/kWh') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(stateWaterRate, '/1000 gal', '$') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(stateRegulations, 'us', stateAbbr) + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Composite Score</b></td><td style="text-align:right; padding:3px 0;">' + (stateCompositeScore != null ? Number(stateCompositeScore).toFixed(2) : 'N/A') + '</td></tr>';
+            popupContent += '<tr><td style="padding:3px 0;"><b>Vigilent Target Score</b></td><td style="text-align:right; padding:3px 0;">' + (vigilentTargetScore != null ? '<span style="font-size:15px; font-weight:700; color:' + targetScoreColor + ' ;">' + Number(vigilentTargetScore).toFixed(2) + '</span>/100' : 'N/A') + '</td></tr>';
+            if (vigilentTargetScore != null) {
+                popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#1b285b;">Vigilent Analysis</b></td></tr>';
+                popupContent += '<tr><td style="padding:3px 0;"><b>Classification</b></td><td style="text-align:right; padding:3px 0; font-weight:600; color:' + targetScoreColor + ' ;">' + (p['vigilent_classification'] || '') + '</td></tr>';
+                popupContent += '<tr><td style="padding:3px 0;"><b>Savings/MW</b></td><td style="text-align:right; padding:3px 0;">$' + (p['savings_per_mw'] != null ? Number(p['savings_per_mw']).toLocaleString() : 'N/A') + '</td></tr>';
+                popupContent += '<tr><td style="padding:3px 0;"><b>Payback</b></td><td style="text-align:right; padding:3px 0;">' + (p['payback_years'] != null ? p['payback_years'].toFixed(2) + ' yr' : 'N/A') + '</td></tr>';
+                if (p['ej_demographic_index'] != null) {
+                    popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Justice</b></td></tr>';
+                    popupContent += '<tr><td style="padding:3px 0;"><b>EJ Demo Index</b></td><td style="text-align:right; padding:3px 0;">' + p['ej_demographic_index'] + '</td></tr>';
+                    popupContent += '<tr><td style="padding:3px 0;"><b>CO2 Avoided</b></td><td style="text-align:right; padding:3px 0;">' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr' : 'N/A') + '</td></tr>';
+                    popupContent += '<tr><td style="padding:3px 0;"><b>Energy Burden</b></td><td style="text-align:right; padding:3px 0;">' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : 'N/A') + '</td></tr>';
+                }
+            }
+            popupContent += '</table></div>';
+            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
+        }
+        function style_VigilentDataCenterDatabaseUS_22_0(feature) {
+            var score = feature.properties['composite_score'];
+            var radius, fillColor, strokeColor, weight;
+            if (score == null) {
+                radius = 5;
+                fillColor = 'rgba(150,150,150,0.8)';
+                strokeColor = 'rgba(100,100,100,1)';
+                weight = 1.5;
+            } else if (score >= 75) {
+                radius = 14;
+                fillColor = 'rgba(37,172,1,0.9)';
+                strokeColor = 'rgba(20,100,0,1)';
+                weight = 2.5;
+            } else if (score >= 50) {
+                radius = 10;
+                fillColor = 'rgba(16,117,232,0.85)';
+                strokeColor = 'rgba(10,91,191,1)';
+                weight = 2.0;
+            } else if (score >= 25) {
+                radius = 7;
+                fillColor = 'rgba(136,180,242,0.85)';
+                strokeColor = 'rgba(61,128,53,1)';
+                weight = 1.5;
+            } else {
+                radius = 5;
+                fillColor = 'rgba(215,231,248,0.85)';
+                strokeColor = 'rgba(100,100,100,1)';
+                weight = 1.5;
+            }
+            return {
+                pane: 'pane_VigilentDataCenterDatabaseUS_22',
+                radius: radius,
+                opacity: 1,
+                color: strokeColor,
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: weight,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: fillColor,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_VigilentDataCenterDatabaseUS_22');
+        map.getPane('pane_VigilentDataCenterDatabaseUS_22').style.zIndex = 422;
+        map.getPane('pane_VigilentDataCenterDatabaseUS_22').style['mix-blend-mode'] = 'normal';
+        var layer_VigilentDataCenterDatabaseUS_22 = new L.geoJson(json_VigilentDataCenterDatabaseUS_22, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VigilentDataCenterDatabaseUS_22',
+            layerName: 'layer_VigilentDataCenterDatabaseUS_22',
+            pane: 'pane_VigilentDataCenterDatabaseUS_22',
+            onEachFeature: pop_VigilentDataCenterDatabaseUS_22,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseUS_22_0(feature));
+            },
+        });
+        var cluster_VigilentDataCenterDatabaseUS_22 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2,
+            disableClusteringAtZoom: 5});
+        cluster_VigilentDataCenterDatabaseUS_22.addLayer(layer_VigilentDataCenterDatabaseUS_22);
+
+        bounds_group.addLayer(layer_VigilentDataCenterDatabaseUS_22);
+        cluster_VigilentDataCenterDatabaseUS_22.addTo(map);
+        // --- Vigilent Target Score Legend ---
+        var vigilentLegend = L.control({position: 'bottomright'});
+        vigilentLegend.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'info legend');
+            div.style.background = 'white';
+            div.style.padding = '12px 16px';
+            div.style.borderRadius = '8px';
+            div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            div.style.fontSize = '12px';
+            div.style.lineHeight = '1.8';
+            div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#1b285b;">Vigilent Target Score</div>';
+            div.innerHTML += '<div><svg width="30" height="30" style="vertical-align:middle;"><circle cx="15" cy="15" r="14" fill="rgba(37,172,1,0.9)" stroke="rgba(20,100,0,1)" stroke-width="2.5"/></svg> <span style="vertical-align:middle;">Excellent (75-100)</span></div>';
+            div.innerHTML += '<div><svg width="22" height="22" style="vertical-align:middle;"><circle cx="11" cy="11" r="10" fill="rgba(16,117,232,0.85)" stroke="rgba(10,91,191,1)" stroke-width="2"/></svg> <span style="vertical-align:middle;">Good (50-74)</span></div>';
+            div.innerHTML += '<div><svg width="16" height="16" style="vertical-align:middle;"><circle cx="8" cy="8" r="7" fill="rgba(136,180,242,0.85)" stroke="rgba(61,128,53,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Moderate (25-49)</span></div>';
+            div.innerHTML += '<div><svg width="12" height="12" style="vertical-align:middle;"><circle cx="6" cy="6" r="5" fill="rgba(150,150,150,0.8)" stroke="rgba(100,100,100,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Not Scored</span></div>';
+            return div;
+        };
+        vigilentLegend.addTo(map);
+        // --- Operator Filter Control ---
+        var allDcLayers = [
+            {geoLayer: layer_VigilentDataCenterDatabaseUS_22, cluster: cluster_VigilentDataCenterDatabaseUS_22},
+            {geoLayer: layer_VigilentDataCenterDatabaseCanada_21, cluster: cluster_VigilentDataCenterDatabaseCanada_21},
+            {geoLayer: layer_VigilentDataCenterDatabaseEurope_20, cluster: cluster_VigilentDataCenterDatabaseEurope_20},
+            {geoLayer: layer_VigilentDataCenterDatabaseBrazil_19, cluster: cluster_VigilentDataCenterDatabaseBrazil_19},
+        ];
+        // Collect unique operators
+        var operators = new Set();
+        allDcLayers.forEach(function(item) {
+            item.geoLayer.eachLayer(function(layer) {
+                var op = layer.feature.properties['Operator'] || layer.feature.properties['operator'] || '';
+                if (op) operators.add(op);
+            });
+        });
+        var operatorList = Array.from(operators).sort();
+
+        var operatorFilter = L.control({position: 'topright'});
+        operatorFilter.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'info operator-filter');
+            div.style.background = 'white';
+            div.style.padding = '10px 14px';
+            div.style.borderRadius = '8px';
+            div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            div.style.fontSize = '13px';
+            div.style.maxHeight = '400px';
+            div.style.overflowY = 'auto';
+
+            var title = '<div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#1b285b;">Filter by Operator</div>';
+            var select = '<select id="operator-select" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px; font-family:inherit;">';
+            select += '<option value="">All Operators (' + operatorList.length + ')</option>';
+            operatorList.forEach(function(op) {
+                select += '<option value="' + op + '">' + op + '</option>';
+            });
+            select += '</select>';
+            var countDiv = '<div id="operator-count" style="margin-top:6px; font-size:11px; color:#666;">Showing all data centers</div>';
+            div.innerHTML = title + select + countDiv;
+
+            // Prevent map interaction when clicking on the control
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+            return div;
+        };
+        operatorFilter.addTo(map);
+
+        // Filter function
+        function filterByOperator(selectedOp) {
+            var shown = 0, total = 0;
+            allDcLayers.forEach(function(item) {
+                item.cluster.clearLayers();
+                item.geoLayer.eachLayer(function(layer) {
+                    total++;
+                    var op = layer.feature.properties['Operator'] || layer.feature.properties['operator'] || '';
+                    if (!selectedOp || op === selectedOp) {
+                        item.cluster.addLayer(layer);
+                        shown++;
+                    }
+                });
+            });
+            var countEl = document.getElementById('operator-count');
+            if (countEl) {
+                if (!selectedOp) {
+                    countEl.textContent = 'Showing all ' + total + ' data centers';
+                } else {
+                    countEl.textContent = 'Showing ' + shown + ' of ' + total + ' data centers';
+                }
+            }
+        }
+
+        // Attach event listener after DOM ready
+        setTimeout(function() {
+            var sel = document.getElementById('operator-select');
+            if (sel) {
+                sel.addEventListener('change', function() {
+                    filterByOperator(this.value);
+                });
+            }
+        }, 100);
+
+        var overlaysTree = [
+            {label: '<img src="legend/VigilentDataCenterDatabaseUS_22.png" /> Vigilent Data Center Database (US)', layer: cluster_VigilentDataCenterDatabaseUS_22},
+            {label: '<img src="legend/VigilentDataCenterDatabaseCanada_21.png" /> Vigilent Data Center Database (Canada)', layer: cluster_VigilentDataCenterDatabaseCanada_21},
+            {label: '<img src="legend/VigilentDataCenterDatabaseEurope_20.png" /> Vigilent Data Center Database (Europe)', layer: cluster_VigilentDataCenterDatabaseEurope_20},
+            {label: '<img src="legend/VigilentDataCenterDatabaseBrazil_19.png" /> Vigilent Data Center Database (Brazil)', layer: cluster_VigilentDataCenterDatabaseBrazil_19},
+        {label: '<b>Commercial Water Rates</b> ($/1000 gal)', selectAllCheckbox: true, children: [
+            {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_51870.png" /></td><td>5.1 - 8.7</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_871201.png" /></td><td>8.7 - 12.0</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1201582.png" /></td><td>12.0 - 15.8</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1581963.png" /></td><td>15.8 - 19.6</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1962294.png" /></td><td>19.6 - 22.9</td></tr></table>', layer: layer_USCommercialWaterRates1000gallons_18},
+            {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_0050.png" /></td><td>0 - 0.5</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_05121.png" /></td><td>0.5 - 1.2</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_12362.png" /></td><td>1.2 - 3.6</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_36613.png" /></td><td>3.6 - 6.1</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_61834.png" /></td><td>6.1 - 8.3</td></tr></table>', layer: layer_CanadaCommercialWaterRate1000gallons_9},
+            {label: 'Europe<br /><table><tr><td style="text-align: center;"><img src="legend/EuropeCommercialWaterRates1000gallons_14_26540.png" /></td><td>2.6 - 5.4</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialWaterRates1000gallons_14_541091.png" /></td><td>5.4 - 10.9</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialWaterRates1000gallons_14_1091762.png" /></td><td>10.9 - 17.6</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialWaterRates1000gallons_14_1762623.png" /></td><td>17.6 - 26.2</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialWaterRates1000gallons_14_2624064.png" /></td><td>26.2 - 40.6</td></tr></table>', layer: layer_EuropeCommercialWaterRates1000gallons_14},
+            {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilCommercialWaterRates1000gallons_4_2022250.png" /></td><td>2.02 - 2.25</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialWaterRates1000gallons_4_2253171.png" /></td><td>2.25 - 3.17</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialWaterRates1000gallons_4_3173872.png" /></td><td>3.17 - 3.87</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialWaterRates1000gallons_4_3875343.png" /></td><td>3.87 - 5.34</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialWaterRates1000gallons_4_5346444.png" /></td><td>5.34 - 6.44</td></tr></table>', layer: layer_BrazilCommercialWaterRates1000gallons_4},]},
+        {label: '<b>Commercial Electricity Rates</b> (¢/kWh)', selectAllCheckbox: true, children: [
+            {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USCommercialElectricityRateskWh_17_741170.png" /></td><td>7.4 - 11.7</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialElectricityRateskWh_17_1171521.png" /></td><td>11.7 - 15.2</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialElectricityRateskWh_17_1522052.png" /></td><td>15.2 - 20.5</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialElectricityRateskWh_17_2052943.png" /></td><td>20.5 - 29.4</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialElectricityRateskWh_17_2943884.png" /></td><td>29.4 - 38.8</td></tr></table>', layer: layer_USCommercialElectricityRateskWh_17},
+            {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCommercialElectricityRatekWh_8_0290.png" /></td><td>0 - 2.9</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialElectricityRatekWh_8_29551.png" /></td><td>2.9 - 5.5</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialElectricityRatekWh_8_55792.png" /></td><td>5.5 - 7.9</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialElectricityRatekWh_8_792053.png" /></td><td>7.9 - 20.5</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialElectricityRatekWh_8_2054544.png" /></td><td>20.5 - 45.4</td></tr></table>', layer: layer_CanadaCommercialElectricityRatekWh_8},
+            {label: 'Europe<br /><table><tr><td style="text-align: center;"><img src="legend/EuropeCommercialElectricityRateskWh_13_85110.png" /></td><td>8.5 - 11</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialElectricityRateskWh_13_11161.png" /></td><td>11 - 16</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialElectricityRateskWh_13_16192.png" /></td><td>16 - 19</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialElectricityRateskWh_13_19253.png" /></td><td>19 - 25</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCommercialElectricityRateskWh_13_25344.png" /></td><td>25 - 34</td></tr></table>', layer: layer_EuropeCommercialElectricityRateskWh_13},
+            {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilCommercialElectricityRateskWh_3_1221280.png" /></td><td>12.2 - 12.8</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialElectricityRateskWh_3_1281411.png" /></td><td>12.8 - 14.1</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialElectricityRateskWh_3_1411562.png" /></td><td>14.1 - 15.6</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialElectricityRateskWh_3_1561693.png" /></td><td>15.6 - 16.9</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCommercialElectricityRateskWh_3_1691864.png" /></td><td>16.9 - 18.6</td></tr></table>', layer: layer_BrazilCommercialElectricityRateskWh_3},]},
+        {label: '<b>Regulations</b> (By Quantity)', selectAllCheckbox: true, children: [
+            {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USRegulationsByQuantity_16_00.png" /></td><td>0</td></tr><tr><td style="text-align: center;"><img src="legend/USRegulationsByQuantity_16_11.png" /></td><td>1</td></tr><tr><td style="text-align: center;"><img src="legend/USRegulationsByQuantity_16_22.png" /></td><td>2+</td></tr></table>', layer: layer_USRegulationsByQuantity_16},
+            {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaRegulationsByQuantity_7_00.png" /></td><td>0</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaRegulationsByQuantity_7_11.png" /></td><td>1</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaRegulationsByQuantity_7_22.png" /></td><td>2+</td></tr></table>', layer: layer_CanadaRegulationsByQuantity_7},
+            {label: 'Europe<br /><table><tr><td style="text-align: center;"><img src="legend/EuropeRegulationsByQuantity_12_00.png" /></td><td>0</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeRegulationsByQuantity_12_11.png" /></td><td>1</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeRegulationsByQuantity_12_22.png" /></td><td>2+</td></tr></table>', layer: layer_EuropeRegulationsByQuantity_12},
+            {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilRegulationsByQuantity_2_00.png" /></td><td>0</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilRegulationsByQuantity_2_11.png" /></td><td>1</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilRegulationsByQuantity_2_22.png" /></td><td>2+</td></tr></table>', layer: layer_BrazilRegulationsByQuantity_2},]},
+        {label: '<b>Composite Score</b> (0-100)', selectAllCheckbox: true, children: [
+            {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USCompositeScore_15_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/USCompositeScore_15_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/USCompositeScore_15_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_USCompositeScore_15},
+            {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_CanadaCompositeScore_6},
+            {label: 'Europe<br /><table><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_EuropeCompositeScore_11},
+            {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_BrazilCompositeScore_1},]},
+            // Canada and Brazil outlines always visible (not toggleable)
+            {label: '<img src="legend/WorldMap_0.png" /> World Map', layer: layer_WorldMap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+        // --- Mutually Exclusive Metric Groups ---
+        var metricGroups = {
+            electricity: [
+                layer_USCommercialElectricityRateskWh_17, layer_EuropeCommercialElectricityRateskWh_13,
+                layer_CanadaCommercialElectricityRatekWh_8, layer_BrazilCommercialElectricityRateskWh_3
+            ],
+            water: [
+                layer_USCommercialWaterRates1000gallons_18, layer_EuropeCommercialWaterRates1000gallons_14,
+                layer_CanadaCommercialWaterRate1000gallons_9, layer_BrazilCommercialWaterRates1000gallons_4
+            ],
+            regulations: [
+                layer_USRegulationsByQuantity_16, layer_EuropeRegulationsByQuantity_12,
+                layer_CanadaRegulationsByQuantity_7, layer_BrazilRegulationsByQuantity_2
+            ],
+            composite: [
+                layer_USCompositeScore_15, layer_EuropeCompositeScore_11,
+                layer_CanadaCompositeScore_6, layer_BrazilCompositeScore_1
+            ]
+        };
+        var metricLabels = {
+            electricity: 'Commercial Electricity Rates (¢/kWh)',
+            water: 'Commercial Water Rates ($/1000 gal)',
+            regulations: 'Regulations (By Quantity)',
+            composite: 'Composite Score (0-100)'
+        };
+
+        // Build reverse lookup: layer → group name
+        var layerToGroup = {};
+        Object.keys(metricGroups).forEach(function(groupName) {
+            metricGroups[groupName].forEach(function(layer) {
+                layerToGroup[L.stamp(layer)] = groupName;
+            });
+        });
+
+        // All metric layers flat
+        var allMetricLayers = [].concat(
+            metricGroups.electricity, metricGroups.water,
+            metricGroups.regulations, metricGroups.composite
+        );
+
+        // --- Switch active metric group ---
+        function switchMetricGroup(groupName) {
+            _mutexActive = true;
+            // Remove all metric layers
+            allMetricLayers.forEach(function(layer) {
+                if (map.hasLayer(layer)) map.removeLayer(layer);
+            });
+            // Add all layers in the selected group
+            metricGroups[groupName].forEach(function(layer) {
+                map.addLayer(layer);
+            });
+            // Update radio button state
+            document.querySelectorAll('input[name="metric-radio"]').forEach(function(radio) {
+                radio.checked = (radio.value === groupName);
+            });
+            _mutexActive = false;
+        }
+
+        var _mutexActive = false;
+        map.on('overlayadd', function(e) {
+            if (_mutexActive) return;
+            var addedId = L.stamp(e.layer);
+            var addedGroup = layerToGroup[addedId];
+            if (!addedGroup) return;
+
+            _mutexActive = true;
+            allMetricLayers.forEach(function(layer) {
+                var lid = L.stamp(layer);
+                if (layerToGroup[lid] !== addedGroup && map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            // Sync radio button
+            document.querySelectorAll('input[name="metric-radio"]').forEach(function(radio) {
+                radio.checked = (radio.value === addedGroup);
+            });
+            _mutexActive = false;
+        });
+
+        // --- Radio Button Control ---
+        var metricRadio = L.control({position: 'bottomleft'});
+        metricRadio.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'info metric-radio-control');
+            div.style.background = 'white';
+            div.style.padding = '10px 14px';
+            div.style.borderRadius = '8px';
+            div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            div.style.fontSize = '12px';
+
+            var html = '<div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#1b285b;">Active Metric</div>';
+            var groupOrder = ['electricity', 'water', 'regulations', 'composite'];
+            groupOrder.forEach(function(key) {
+                var checked = key === 'electricity' ? ' checked' : '';
+                html += '<label style="display:block; margin:4px 0; cursor:pointer;">';
+                html += '<input type="radio" name="metric-radio" value="' + key + '"' + checked + ' style="margin-right:6px;">';
+                html += metricLabels[key] + '</label>';
+            });
+            div.innerHTML = html;
+
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+
+            div.addEventListener('change', function(e) {
+                if (e.target.name === 'metric-radio') {
+                    switchMetricGroup(e.target.value);
+                }
+            });
+            return div;
+        };
+        metricRadio.addTo(map);
+        switchMetricGroup('electricity');
+
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                if (isLayersListExpanded) {
+                    newLayersListHeight();
+                }
+            }, 10);
+        });
+        </script>        
+    </body>
+</html>
