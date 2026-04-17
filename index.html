@@ -58,6 +58,7 @@
         <script src="data/USCommercialElectricityRateskWh_17.js"></script>
         <script src="data/USCommercialWaterRates1000gallons_18.js"></script>
         <script src="data/VigilentDataCenterDatabaseBrazil_19.js"></script>
+        <script src="data/VigilentDataCenterDatabaseOther_23.js"></script>
         <script src="data/VigilentDataCenterDatabaseEurope_20.js"></script>
         <script src="data/VigilentDataCenterDatabaseCanada_21.js"></script>
         <script src="data/VigilentDataCenterDatabaseUS_22.js"></script>
@@ -490,7 +491,7 @@
             style: style_BrazilCommercialElectricityRateskWh_3_0,
         });
         bounds_group.addLayer(layer_BrazilCommercialElectricityRateskWh_3);
-        // layer_BrazilCommercialElectricityRateskWh_3 not added by default
+        map.addLayer(layer_BrazilCommercialElectricityRateskWh_3);
         function pop_BrazilCommercialWaterRates1000gallons_4(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -949,7 +950,7 @@
             style: style_CanadaCommercialElectricityRatekWh_8_0,
         });
         bounds_group.addLayer(layer_CanadaCommercialElectricityRatekWh_8);
-        // layer_CanadaCommercialElectricityRatekWh_8 not added by default
+        map.addLayer(layer_CanadaCommercialElectricityRatekWh_8);
         function pop_CanadaCommercialWaterRate1000gallons_9(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1427,7 +1428,7 @@
             style: style_EuropeCommercialElectricityRateskWh_13_0,
         });
         bounds_group.addLayer(layer_EuropeCommercialElectricityRateskWh_13);
-        // layer_EuropeCommercialElectricityRateskWh_13 not added by default
+        map.addLayer(layer_EuropeCommercialElectricityRateskWh_13);
         function pop_EuropeCommercialWaterRates1000gallons_14(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1548,67 +1549,6 @@
         });
         bounds_group.addLayer(layer_EuropeCommercialWaterRates1000gallons_14);
         // layer_EuropeCommercialWaterRates1000gallons_14 not added by default
-        var usCompositeScoreLookup = {};
-        var usElectricityRateLookup = {};
-        var usWaterRateLookup = {};
-        var usRegulationsLookup = {};
-        var usStateNameByAbbr = {'AL':'Alabama','AK':'Alaska','AZ':'Arizona','AR':'Arkansas','CA':'California','CO':'Colorado','CT':'Connecticut','DE':'Delaware','FL':'Florida','GA':'Georgia','HI':'Hawaii','ID':'Idaho','IL':'Illinois','IN':'Indiana','IA':'Iowa','KS':'Kansas','KY':'Kentucky','LA':'Louisiana','ME':'Maine','MD':'Maryland','MA':'Massachusetts','MI':'Michigan','MN':'Minnesota','MS':'Mississippi','MO':'Missouri','MT':'Montana','NE':'Nebraska','NV':'Nevada','NH':'New Hampshire','NJ':'New Jersey','NM':'New Mexico','NY':'New York','NC':'North Carolina','ND':'North Dakota','OH':'Ohio','OK':'Oklahoma','OR':'Oregon','PA':'Pennsylvania','RI':'Rhode Island','SC':'South Carolina','SD':'South Dakota','TN':'Tennessee','TX':'Texas','UT':'Utah','VT':'Vermont','VA':'Virginia','WA':'Washington','WV':'West Virginia','WI':'Wisconsin','WY':'Wyoming'};
-        json_USCompositeScore_15.features.forEach(function(feature) {
-            if (feature.properties && feature.properties['NAME'] != null) {
-                var stateName = feature.properties['NAME'];
-                usCompositeScoreLookup[stateName] = feature.properties['Composite'];
-                usElectricityRateLookup[stateName] = feature.properties['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)'];
-                usWaterRateLookup[stateName] = feature.properties['Water Cost By State_Commercial Water Price ($/1000 gallons)'];
-                usRegulationsLookup[stateName] = feature.properties['Regulations_Regulations:'];
-            }
-        });
-        function resolveUSStateName(stateValue) {
-            return usStateNameByAbbr[stateValue] || stateValue;
-        }
-        function getUSCompositeScore(stateValue) {
-            var resolvedState = resolveUSStateName(stateValue);
-            return Object.prototype.hasOwnProperty.call(usCompositeScoreLookup, resolvedState)
-                ? usCompositeScoreLookup[resolvedState]
-                : null;
-        }
-        function getUSStateValue(lookup, stateValue) {
-            var resolvedState = resolveUSStateName(stateValue);
-            return Object.prototype.hasOwnProperty.call(lookup, resolvedState)
-                ? lookup[resolvedState]
-                : null;
-        }
-        function formatUSCompositeScore(stateName) {
-            var score = getUSCompositeScore(stateName);
-            return score != null ? autolinker.link(String(score).replace(/'/g, '\'').toLocaleString()) : '';
-        }
-        function formatRateValue(value, suffix, prefix) {
-            if (value == null || value === '') {
-                return 'N/A';
-            }
-            var numericValue = Number(value);
-            if (!isNaN(numericValue)) {
-                return (prefix || '') + numericValue.toFixed(2) + (suffix || '');
-            }
-            return (prefix || '') + value + (suffix || '');
-        }
-        function formatRegulationsText(value, region, stateAbbr) {
-            if (value == null) {
-                return 'None';
-            }
-            var text = String(value).replace(/\r/g, '').trim();
-            if (!text) {
-                return 'None';
-            }
-            var parts = text.split(/\n+/).map(function(part) { return part.trim(); }).filter(Boolean);
-            if (parts.length <= 1 && region === 'us' && stateAbbr) {
-                var escapedAbbr = stateAbbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                parts = text.split(new RegExp('(?=' + escapedAbbr + '\\s)', 'g')).map(function(part) { return part.trim(); }).filter(Boolean);
-            }
-            if (parts.length <= 1) {
-                parts = text.split(/\s{2,}|;\s*/).map(function(part) { return part.trim(); }).filter(Boolean);
-            }
-            return parts.length ? parts.join('; ') : 'None';
-        }
         function pop_USCompositeScore_15(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1628,14 +1568,14 @@
                     </tr>\
                     <tr>\
                         <th scope="row">Composite Score</th>\
-                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_USCompositeScore_15_0(feature) {
@@ -1717,14 +1657,14 @@
                     </tr>\
                     <tr>\
                         <th scope="row">Composite Score</th>\
-                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_USRegulationsByQuantity_16_0(feature) {
@@ -1809,14 +1749,14 @@
                     </tr>\
                     <tr>\
                         <th scope="row">Composite Score</th>\
-                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_USCommercialElectricityRateskWh_17_0(feature) {
@@ -1909,7 +1849,7 @@
             style: style_USCommercialElectricityRateskWh_17_0,
         });
         bounds_group.addLayer(layer_USCommercialElectricityRateskWh_17);
-        // Startup metric layers are added via switchMetricGroup below.
+        map.addLayer(layer_USCommercialElectricityRateskWh_17);
         function pop_USCommercialWaterRates1000gallons_18(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1929,14 +1869,14 @@
                     </tr>\
                     <tr>\
                         <th scope="row">Composite Score</th>\
-                        <td class="visible-with-data" id="Composite">' + formatUSCompositeScore(feature.properties['NAME']) + '</td>\
+                        <td class="visible-with-data" id="Composite">' + (feature.properties['Composite'] !== null ? autolinker.link(String(feature.properties['Composite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-            layer.on('popupopen', function(e) {
-                addClassToPopupIfMedia(content, e.popup);
-            });
-            layer.bindPopup(content, { maxHeight: 400 });
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_USCommercialWaterRates1000gallons_18_0(feature) {
@@ -2030,43 +1970,96 @@
         });
         bounds_group.addLayer(layer_USCommercialWaterRates1000gallons_18);
         // layer_USCommercialWaterRates1000gallons_18 not added by default
-        function pop_VigilentDataCenterDatabaseBrazil_19(feature, layer) {
+        // --- Shared popup builder for ALL data centers ---
+        function buildDcPopup(feature, layer) {
             var p = feature.properties;
-            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
-            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['State/Province'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
-            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Regulations'], 'brazil') + '</td></tr>';
-            var comp = p['Brazil Commercial Electricity Rates (¢/kWh)_Composite'];
-            if (comp != null) {
-                var scoreColor = comp >= 75 ? '#25ac01' : (comp >= 50 ? '#1075E8' : '#888');
-                popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#1b285b;">Regional Composite</b></td></tr>';
-                popupContent += '<tr><td style="padding:3px 0;"><b>Composite Score</b></td><td style="text-align:right; padding:3px 0;"><span style="font-size:15px; font-weight:700; color:' + scoreColor + ';">' + Number(comp).toFixed(1) + '</span>/100</td></tr>';
+            var td = 'style="padding:3px 0;"';
+            var tdr = 'style="text-align:right;padding:3px 0;"';
+
+            // Location line
+            var loc = (p['City'] || '');
+            if (p['State/Province'] || p['State Abv']) loc += ', ' + (p['State Abv'] || p['State/Province'] || '');
+            if (p['Country'] && p['Country'] !== 'USA') loc += ', ' + p['Country'];
+
+            var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:260px;max-width:320px;">';
+            html += '<div style="font-size:16px;font-weight:700;color:#1b285b;margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
+            html += '<div style="font-size:13px;color:#666;margin-bottom:2px;">' + loc + '</div>';
+            html += '<div style="font-size:13px;color:#666;margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
+            html += '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+
+            // --- Facility Info (always shown) ---
+            html += '<tr><td ' + td + '><b>Size</b></td><td ' + tdr + '>' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Status</b></td><td ' + tdr + '>' + (p['Operational Status'] || 'N/A') + '</td></tr>';
+
+            // --- Rates (always shown — use regional key or fall back to electricity_price_used) ---
+            var elecRate = p['Electricity By State_Commercial Electricity Rate Per State (¢/kWh)']
+                || p['Europe Statistics_Commercial Electricity Rate (¢/kWh)']
+                || p['Canada Statistics_Commercial Electricity Rate (¢/kWh)']
+                || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Electricity Rate (¢/kWh)'];
+            if (elecRate == null && p['electricity_price_used'] != null) elecRate = (p['electricity_price_used'] * 100).toFixed(1);
+            html += '<tr><td ' + td + '><b>Elec. Rate</b></td><td ' + tdr + '>' + (elecRate != null ? elecRate + ' ¢/kWh' : 'N/A') + '</td></tr>';
+
+            var waterRate = p['Water Cost By State_Commercial Water Price ($/1000 gallons)']
+                || p['Europe Statistics_Commercial Water Rate ($/1000 gallons)']
+                || p['Canada Statistics_Commercial Water Rate ($/1000 gallons)']
+                || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Commercial Water Rate ($/1000 gallons)'];
+            html += '<tr><td ' + td + '><b>Water Rate</b></td><td ' + tdr + '>' + (waterRate != null ? '$' + waterRate + '/1000 gal' : 'N/A') + '</td></tr>';
+
+            var regs = p['Regulations_Regulations:']
+                || p['Europe Statistics_Regulations']
+                || p['Canada Statistics_Regulations']
+                || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Regulations'];
+            var regDisplay = 'None';
+            if (regs) {
+                var regCount = regs.split('\n').filter(function(r) { return r.trim(); }).length;
+                regDisplay = regCount + ' active';
             }
-            popupContent += '</table></div>';
-            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
+            html += '<tr><td ' + td + '><b>Regulations</b></td><td ' + tdr + '>' + regDisplay + '</td></tr>';
+
+            // --- Vigilent Analysis (always shown — all DCs are now scored) ---
+            var score = p['composite_score'];
+            var scoreColor = score >= 75 ? '#25ac01' : (score >= 50 ? '#1075E8' : (score >= 25 ? '#e68a00' : '#888'));
+            html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#1b285b;">Vigilent Analysis</b></td></tr>';
+            html += '<tr><td ' + td + '><b>Composite Score</b></td><td ' + tdr + '><span style="font-size:15px;font-weight:700;color:' + scoreColor + ';">' + (score != null ? score.toFixed(1) : 'N/A') + '</span>' + (score != null ? '/100' : '') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Classification</b></td><td ' + tdr + ' style="text-align:right;padding:3px 0;font-weight:600;color:' + scoreColor + ';">' + (p['vigilent_classification'] || 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Savings/MW</b></td><td ' + tdr + '>' + (p['savings_per_mw'] != null ? '$' + Number(p['savings_per_mw']).toLocaleString() : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Payback</b></td><td ' + tdr + '>' + (p['payback_years'] != null ? p['payback_years'].toFixed(2) + ' yr' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>OPEX Impact</b></td><td ' + tdr + '>' + (p['impact_on_opex_pct'] != null ? p['impact_on_opex_pct'] + '%' : 'N/A') + '</td></tr>';
+
+            // --- EJ section (where available) ---
+            if (p['ej_demographic_index'] != null) {
+                html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Justice</b></td></tr>';
+                html += '<tr><td ' + td + '><b>EJ Demo Index</b></td><td ' + tdr + '>' + p['ej_demographic_index'] + '</td></tr>';
+                html += '<tr><td ' + td + '><b>CO2 Avoided</b></td><td ' + tdr + '>' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr' : 'N/A') + '</td></tr>';
+                html += '<tr><td ' + td + '><b>Energy Burden</b></td><td ' + tdr + '>' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : 'N/A') + '</td></tr>';
+            }
+
+            html += '</table></div>';
+            layer.bindPopup(html, { maxHeight: 400, maxWidth: 340 });
         }
 
-        function style_VigilentDataCenterDatabaseBrazil_19_0() {
-            return {
-                pane: 'pane_VigilentDataCenterDatabaseBrazil_19',
-                radius: 4.0,
-                opacity: 1,
-                color: 'rgba(61,128,53,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 2.0,
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(84,176,74,1.0)',
-                interactive: true,
+        // Shared score-based marker style for all DC layers
+        function scoredMarkerStyle(feature, pane) {
+            var score = feature.properties['composite_score'];
+            var radius, fillColor, strokeColor, weight;
+            if (score == null) {
+                radius = 5; fillColor = 'rgba(150,150,150,0.8)'; strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
+            } else if (score >= 75) {
+                radius = 14; fillColor = 'rgba(37,172,1,0.9)'; strokeColor = 'rgba(20,100,0,1)'; weight = 2.5;
+            } else if (score >= 50) {
+                radius = 10; fillColor = 'rgba(16,117,232,0.85)'; strokeColor = 'rgba(10,91,191,1)'; weight = 2.0;
+            } else if (score >= 25) {
+                radius = 7; fillColor = 'rgba(136,180,242,0.85)'; strokeColor = 'rgba(61,128,53,1)'; weight = 1.5;
+            } else {
+                radius = 5; fillColor = 'rgba(215,231,248,0.85)'; strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
             }
+            return { pane: pane, radius: radius, opacity: 1, color: strokeColor, dashArray: '', lineCap: 'round', lineJoin: 'round', weight: weight, fill: true, fillOpacity: 1, fillColor: fillColor, interactive: true };
+        }
+
+        function pop_VigilentDataCenterDatabaseBrazil_19(feature, layer) { buildDcPopup(feature, layer); }
+
+        function style_VigilentDataCenterDatabaseBrazil_19_0(feature) {
+            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseBrazil_19');
         }
         map.createPane('pane_VigilentDataCenterDatabaseBrazil_19');
         map.getPane('pane_VigilentDataCenterDatabaseBrazil_19').style.zIndex = 419;
@@ -2092,37 +2085,36 @@
 
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseBrazil_19);
         cluster_VigilentDataCenterDatabaseBrazil_19.addTo(map);
-        function pop_VigilentDataCenterDatabaseEurope_20(feature, layer) {
-            var p = feature.properties;
-            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
-            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['Country'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
-            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Europe Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Europe Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Europe Statistics_Regulations'], 'europe') + '</td></tr>';
-            popupContent += '</table></div>';
-            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
-        }
 
-        function style_VigilentDataCenterDatabaseEurope_20_0() {
-            return {
-                pane: 'pane_VigilentDataCenterDatabaseEurope_20',
-                radius: 4.0,
-                opacity: 1,
-                color: 'rgba(61,128,53,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 2.0,
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(84,176,74,1.0)',
-                interactive: true,
-            }
+        // --- Other Regions (India, Singapore, Thailand) ---
+        function pop_VigilentDataCenterDatabaseOther_23(feature, layer) { buildDcPopup(feature, layer); }
+        function style_VigilentDataCenterDatabaseOther_23_0(feature) {
+            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseOther_23');
+        }
+        map.createPane('pane_VigilentDataCenterDatabaseOther_23');
+        map.getPane('pane_VigilentDataCenterDatabaseOther_23').style.zIndex = 423;
+        map.getPane('pane_VigilentDataCenterDatabaseOther_23').style['mix-blend-mode'] = 'normal';
+        var layer_VigilentDataCenterDatabaseOther_23 = new L.geoJson(json_VigilentDataCenterDatabaseOther_23, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_VigilentDataCenterDatabaseOther_23',
+            layerName: 'layer_VigilentDataCenterDatabaseOther_23',
+            pane: 'pane_VigilentDataCenterDatabaseOther_23',
+            onEachFeature: pop_VigilentDataCenterDatabaseOther_23,
+            pointToLayer: function (feature, latlng) {
+                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseOther_23_0(feature));
+            },
+        });
+        var cluster_VigilentDataCenterDatabaseOther_23 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_VigilentDataCenterDatabaseOther_23.addLayer(layer_VigilentDataCenterDatabaseOther_23);
+        bounds_group.addLayer(layer_VigilentDataCenterDatabaseOther_23);
+        cluster_VigilentDataCenterDatabaseOther_23.addTo(map);
+
+        function pop_VigilentDataCenterDatabaseEurope_20(feature, layer) { buildDcPopup(feature, layer); }
+
+        function style_VigilentDataCenterDatabaseEurope_20_0(feature) {
+            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseEurope_20');
         }
         map.createPane('pane_VigilentDataCenterDatabaseEurope_20');
         map.getPane('pane_VigilentDataCenterDatabaseEurope_20').style.zIndex = 420;
@@ -2148,37 +2140,10 @@
 
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseEurope_20);
         cluster_VigilentDataCenterDatabaseEurope_20.addTo(map);
-        function pop_VigilentDataCenterDatabaseCanada_21(feature, layer) {
-            var p = feature.properties;
-            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
-            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (p['State/Province'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
-            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Canada Statistics_Commercial Electricity Rate (¢/kWh)'], ' ¢/kWh') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(p['Canada Statistics_Commercial Water Rate ($/1000 gallons)'], '/1000 gal', '$') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(p['Canada Statistics_Regulations'], 'canada') + '</td></tr>';
-            popupContent += '</table></div>';
-            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
-        }
+        function pop_VigilentDataCenterDatabaseCanada_21(feature, layer) { buildDcPopup(feature, layer); }
 
-        function style_VigilentDataCenterDatabaseCanada_21_0() {
-            return {
-                pane: 'pane_VigilentDataCenterDatabaseCanada_21',
-                radius: 4.0,
-                opacity: 1,
-                color: 'rgba(61,128,53,1.0)',
-                dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 2.0,
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(84,176,74,1.0)',
-                interactive: true,
-            }
+        function style_VigilentDataCenterDatabaseCanada_21_0(feature) {
+            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseCanada_21');
         }
         map.createPane('pane_VigilentDataCenterDatabaseCanada_21');
         map.getPane('pane_VigilentDataCenterDatabaseCanada_21').style.zIndex = 421;
@@ -2203,43 +2168,9 @@
         cluster_VigilentDataCenterDatabaseCanada_21.addLayer(layer_VigilentDataCenterDatabaseCanada_21);
 
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseCanada_21);
-        function pop_VigilentDataCenterDatabaseUS_22(feature, layer) {
-            var p = feature.properties;
-            var stateName = p['State/Province (Name)'];
-            var stateAbbr = p['State Abv'];
-            var stateCompositeScore = getUSCompositeScore(stateName);
-            var stateElectricityRate = getUSStateValue(usElectricityRateLookup, stateName);
-            var stateWaterRate = getUSStateValue(usWaterRateLookup, stateName);
-            var stateRegulations = getUSStateValue(usRegulationsLookup, stateName);
-            var vigilentTargetScore = p['composite_score'];
-            var targetScoreColor = '#1075E8';
-            var popupContent = '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-width: 240px; max-width: 320px;">';
-            popupContent += '<div style="font-size:16px; font-weight:700; color:#1b285b; margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:2px;">' + (p['City'] || '') + ', ' + (stateAbbr || '') + '</div>';
-            popupContent += '<div style="font-size:13px; color:#666; margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
-            popupContent += '<table style="width:100%; font-size:13px; border-collapse:collapse;">';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Size</b></td><td style="text-align:right; padding:3px 0;">' + (p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Status</b></td><td style="text-align:right; padding:3px 0;">' + (p['Operational Status'] || 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Elec. Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(stateElectricityRate, ' ¢/kWh') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Water Rate</b></td><td style="text-align:right; padding:3px 0;">' + formatRateValue(stateWaterRate, '/1000 gal', '$') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Regulations</b></td><td style="text-align:right; padding:3px 0; max-width:150px;">' + formatRegulationsText(stateRegulations, 'us', stateAbbr) + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Composite Score</b></td><td style="text-align:right; padding:3px 0;">' + (stateCompositeScore != null ? Number(stateCompositeScore).toFixed(2) : 'N/A') + '</td></tr>';
-            popupContent += '<tr><td style="padding:3px 0;"><b>Vigilent Target Score</b></td><td style="text-align:right; padding:3px 0;">' + (vigilentTargetScore != null ? '<span style="font-size:15px; font-weight:700; color:' + targetScoreColor + ' ;">' + Number(vigilentTargetScore).toFixed(2) + '</span>/100' : 'N/A') + '</td></tr>';
-            if (vigilentTargetScore != null) {
-                popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#1b285b;">Vigilent Analysis</b></td></tr>';
-                popupContent += '<tr><td style="padding:3px 0;"><b>Classification</b></td><td style="text-align:right; padding:3px 0; font-weight:600; color:' + targetScoreColor + ' ;">' + (p['vigilent_classification'] || '') + '</td></tr>';
-                popupContent += '<tr><td style="padding:3px 0;"><b>Savings/MW</b></td><td style="text-align:right; padding:3px 0;">$' + (p['savings_per_mw'] != null ? Number(p['savings_per_mw']).toLocaleString() : 'N/A') + '</td></tr>';
-                popupContent += '<tr><td style="padding:3px 0;"><b>Payback</b></td><td style="text-align:right; padding:3px 0;">' + (p['payback_years'] != null ? p['payback_years'].toFixed(2) + ' yr' : 'N/A') + '</td></tr>';
-                if (p['ej_demographic_index'] != null) {
-                    popupContent += '<tr><td colspan="2" style="padding:8px 0 4px 0; border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Justice</b></td></tr>';
-                    popupContent += '<tr><td style="padding:3px 0;"><b>EJ Demo Index</b></td><td style="text-align:right; padding:3px 0;">' + p['ej_demographic_index'] + '</td></tr>';
-                    popupContent += '<tr><td style="padding:3px 0;"><b>CO2 Avoided</b></td><td style="text-align:right; padding:3px 0;">' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr' : 'N/A') + '</td></tr>';
-                    popupContent += '<tr><td style="padding:3px 0;"><b>Energy Burden</b></td><td style="text-align:right; padding:3px 0;">' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : 'N/A') + '</td></tr>';
-                }
-            }
-            popupContent += '</table></div>';
-            layer.bindPopup(popupContent, { maxHeight: 400, maxWidth: 340 });
-        }
+        cluster_VigilentDataCenterDatabaseCanada_21.addTo(map);
+        function pop_VigilentDataCenterDatabaseUS_22(feature, layer) { buildDcPopup(feature, layer); }
+
         function style_VigilentDataCenterDatabaseUS_22_0(feature) {
             var score = feature.properties['composite_score'];
             var radius, fillColor, strokeColor, weight;
@@ -2334,6 +2265,7 @@
             {geoLayer: layer_VigilentDataCenterDatabaseCanada_21, cluster: cluster_VigilentDataCenterDatabaseCanada_21},
             {geoLayer: layer_VigilentDataCenterDatabaseEurope_20, cluster: cluster_VigilentDataCenterDatabaseEurope_20},
             {geoLayer: layer_VigilentDataCenterDatabaseBrazil_19, cluster: cluster_VigilentDataCenterDatabaseBrazil_19},
+            {geoLayer: layer_VigilentDataCenterDatabaseOther_23, cluster: cluster_VigilentDataCenterDatabaseOther_23},
         ];
         // Collect unique operators
         var operators = new Set();
@@ -2413,6 +2345,7 @@
             {label: '<img src="legend/VigilentDataCenterDatabaseCanada_21.png" /> Vigilent Data Center Database (Canada)', layer: cluster_VigilentDataCenterDatabaseCanada_21},
             {label: '<img src="legend/VigilentDataCenterDatabaseEurope_20.png" /> Vigilent Data Center Database (Europe)', layer: cluster_VigilentDataCenterDatabaseEurope_20},
             {label: '<img src="legend/VigilentDataCenterDatabaseBrazil_19.png" /> Vigilent Data Center Database (Brazil)', layer: cluster_VigilentDataCenterDatabaseBrazil_19},
+            {label: '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(186,85,211,1);border:2px solid rgba(128,0,128,1);margin-right:4px;vertical-align:middle;"></span> Vigilent Data Center Database (Other)', layer: cluster_VigilentDataCenterDatabaseOther_23},
         {label: '<b>Commercial Water Rates</b> ($/1000 gal)', selectAllCheckbox: true, children: [
             {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_51870.png" /></td><td>5.1 - 8.7</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_871201.png" /></td><td>8.7 - 12.0</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1201582.png" /></td><td>12.0 - 15.8</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1581963.png" /></td><td>15.8 - 19.6</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1962294.png" /></td><td>19.6 - 22.9</td></tr></table>', layer: layer_USCommercialWaterRates1000gallons_18},
             {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_0050.png" /></td><td>0 - 0.5</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_05121.png" /></td><td>0.5 - 1.2</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_12362.png" /></td><td>1.2 - 3.6</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_36613.png" /></td><td>3.6 - 6.1</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_61834.png" /></td><td>6.1 - 8.3</td></tr></table>', layer: layer_CanadaCommercialWaterRate1000gallons_9},
@@ -2556,7 +2489,6 @@
             return div;
         };
         metricRadio.addTo(map);
-        switchMetricGroup('electricity');
 
 		document.addEventListener("DOMContentLoaded", function() {
             // set new Layers List height which considers toggle icon
@@ -2594,11 +2526,21 @@
 			}
             // Collapsed/Expanded at Start to apply new height
             setTimeout(function() {
-                if (isLayersListExpanded) {
-                    newLayersListHeight();
-                }
+                toggleLayerControl.click();
             }, 10);
-        });
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
         </script>        
     </body>
 </html>
