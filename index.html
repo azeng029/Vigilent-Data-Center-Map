@@ -2208,11 +2208,18 @@
             'rgba(189,201,225,0.60)',    // 1
             'rgba(115,178,216,0.60)'     // 2+
         ];
-        var COMP_BREAKS  = [33, 67, 100];
+        // 7-bin ColorBrewer Greens ramp. Breaks calibrated to the real
+        // distribution (~p15 / p30 / p45 / p60 / p75 / p90) so the US
+        // shows gradient variation instead of one flat color.
+        var COMP_BREAKS  = [15, 20, 25, 35, 45, 55, 100];
         var COMP_COLORS  = [
-            'rgba(247,252,245,0.60)',    // 0..33
-            'rgba(123,199,124,0.60)',    // 33..67
-            'rgba(0,68,27,0.60)'         // 67..100
+            'rgba(247,252,245,0.60)',    // 0..15   palest
+            'rgba(199,233,192,0.60)',    // 15..20
+            'rgba(161,217,155,0.60)',    // 20..25
+            'rgba(116,196,118,0.60)',    // 25..35
+            'rgba(65,171,93,0.60)',      // 35..45
+            'rgba(35,139,69,0.60)',      // 45..55
+            'rgba(0,68,27,0.60)'         // 55..100  darkest
         ];
 
         function makeGlobalStyle(paneName, breaks, colors) {
