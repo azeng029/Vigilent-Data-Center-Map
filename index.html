@@ -14,17 +14,81 @@
         <link rel="stylesheet" href="css/MarkerCluster.Default.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <style>
-        html, body, #map {
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
-        }
+        html, body { width: 100%; height: 100%; padding: 0; margin: 0;
+                     font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        #app { display: flex; height: 100vh; }
+        #sidebar { width: 380px; display: flex; flex-direction: column;
+                   border-right: 1px solid #ddd; background: #fafafa;
+                   transition: margin-left 0.25s ease; }
+        #sidebar.collapsed { margin-left: -380px; }
+        #sidebar-header { padding: 12px 14px 8px 14px; border-bottom: 1px solid #e2e2e2;
+                          background: #fff; }
+        #sidebar-header h2 { margin: 0 0 8px 0; font-size: 14px; color: #1b285b;
+                             font-weight: 700; }
+        #sidebar-header .controls { display: flex; gap: 6px; }
+        #sidebar-header select { flex: 1; padding: 5px 7px; border: 1px solid #ccc;
+                                 border-radius: 4px; font-size: 12px; background: #fff; }
+        #sb-count { padding: 6px 14px; font-size: 11px; color: #666;
+                    border-bottom: 1px solid #e2e2e2; background: #fff; }
+        #sb-scroll { flex: 1; overflow-y: auto; }
+        #sb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        #sb-table thead { position: sticky; top: 0; background: #f5f5f7;
+                          box-shadow: 0 1px 0 #ddd; }
+        #sb-table th { padding: 6px 10px; text-align: left; font-weight: 600;
+                       color: #333; font-size: 10px; text-transform: uppercase;
+                       letter-spacing: 0.4px; }
+        #sb-table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+        #sb-table tr { cursor: pointer; transition: background 0.08s; }
+        #sb-table tr:hover { background: #eef4fb; }
+        #sb-table tr.active { background: #fff2b3; box-shadow: inset 3px 0 0 #e6a800; }
+        #sb-table td.rank-num { color: #888; width: 28px; font-variant-numeric: tabular-nums; }
+        #sb-table td.value { text-align: right; font-variant-numeric: tabular-nums;
+                             font-weight: 600; color: #1b285b; }
+        #sb-table .meta { font-size: 10px; color: #888; margin-top: 1px; }
+        #map-wrap { flex: 1; position: relative; }
+        #map { width: 100%; height: 100%; padding: 0; margin: 0; }
+        #sidebar-toggle { position: absolute; top: 12px; left: 12px; z-index: 1000;
+                          background: #fff; border: 1px solid #bbb; border-radius: 4px;
+                          padding: 6px 10px; font-size: 13px; font-weight: 600;
+                          cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+        #sidebar-toggle:hover { background: #f0f0f0; }
         </style>
         <title>Vigilent Data Center Map</title>
     </head>
     <body>
-        <div id="map">
+        <div id="app">
+            <aside id="sidebar">
+                <div id="sidebar-header">
+                    <h2>Rank Data Centers</h2>
+                    <div class="controls">
+                        <select id="sb-var">
+                            <option value="composite_score">Vigilent Composite Score</option>
+                            <option value="state_province_composite">State / Province Score</option>
+                            <option value="savings_per_mw">Savings per MW</option>
+                            <option value="estimated_savings">Estimated Savings ($)</option>
+                            <option value="payback_years">Payback (years)</option>
+                            <option value="Size (MW)">Size (MW)</option>
+                            <option value="co2_avoided_metric_tons">CO₂ Avoided (MT)</option>
+                            <option value="electricity_price_used">Electricity Rate ($/kWh)</option>
+                        </select>
+                        <select id="sb-dir">
+                            <option value="desc">High → Low</option>
+                            <option value="asc">Low → High</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="sb-count"></div>
+                <div id="sb-scroll">
+                    <table id="sb-table">
+                        <thead><tr><th class="rank-num">#</th><th>Data Center</th><th style="text-align:right;">Value</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </aside>
+            <div id="map-wrap">
+                <button id="sidebar-toggle" title="Toggle sidebar">☰</button>
+                <div id="map"></div>
+            </div>
         </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -2668,6 +2732,137 @@
             }  
         });       
         setBounds();
-        </script>        
+
+        // ============================================================
+        // SIDEBAR — sortable DC rank list bound to map markers
+        // ============================================================
+        (function() {
+            var allDcs = [].concat(
+                json_VigilentDataCenterDatabaseUS_22.features,
+                json_VigilentDataCenterDatabaseCanada_21.features,
+                json_VigilentDataCenterDatabaseEurope_20.features,
+                json_VigilentDataCenterDatabaseBrazil_19.features,
+                json_VigilentDataCenterDatabaseOther_23.features
+            );
+            allDcs.forEach(function(f, i) { f.properties._id = i; });
+
+            // Map Name -> marker from the existing cluster DC layers so a row
+            // click pans to the same marker the user would click directly.
+            var markerByName = {};
+            var clusterLayers = [
+                layer_VigilentDataCenterDatabaseUS_22,
+                layer_VigilentDataCenterDatabaseCanada_21,
+                layer_VigilentDataCenterDatabaseEurope_20,
+                layer_VigilentDataCenterDatabaseBrazil_19,
+                layer_VigilentDataCenterDatabaseOther_23,
+            ];
+            clusterLayers.forEach(function(layer) {
+                layer.eachLayer(function(m) {
+                    var name = m.feature && m.feature.properties && m.feature.properties.Name;
+                    if (name) markerByName[name] = m;
+                });
+            });
+
+            var highlightRing = null;
+
+            function valueFmt(variable, v) {
+                if (v == null || v === '') return '—';
+                if (typeof v !== 'number') return v;
+                if (variable === 'estimated_savings' || variable === 'savings_per_mw')
+                    return '$' + Math.round(v).toLocaleString();
+                if (variable === 'payback_years') return v.toFixed(2) + ' yr';
+                if (variable === 'Size (MW)') return v + ' MW';
+                if (variable === 'co2_avoided_metric_tons') return Math.round(v).toLocaleString() + ' MT';
+                if (variable === 'electricity_price_used') return '$' + v.toFixed(4) + '/kWh';
+                return v.toFixed(1);
+            }
+
+            var SB_VAR = 'composite_score';
+            var SB_DIR = 'desc';
+
+            function renderTable() {
+                var sorted = allDcs.slice().sort(function(a, b) {
+                    var va = a.properties[SB_VAR], vb = b.properties[SB_VAR];
+                    if (va == null && vb == null) return 0;
+                    if (va == null) return 1;
+                    if (vb == null) return -1;
+                    return SB_DIR === 'desc' ? vb - va : va - vb;
+                });
+                var scored = sorted.filter(function(f){ return f.properties[SB_VAR] != null; });
+                document.getElementById('sb-count').textContent =
+                    scored.length + ' / ' + sorted.length + ' with a value';
+
+                var tbody = document.querySelector('#sb-table tbody');
+                tbody.innerHTML = '';
+                var frag = document.createDocumentFragment();
+                sorted.forEach(function(f, i) {
+                    var p = f.properties;
+                    var v = p[SB_VAR];
+                    var tr = document.createElement('tr');
+                    tr.dataset.name = p.Name;
+                    var loc = (p.City || '') + (p['State/Province'] ? ', ' + p['State/Province'] : '');
+                    if (p.Country && p.Country !== 'USA') loc += ', ' + p.Country;
+                    tr.innerHTML =
+                        '<td class="rank-num">' + (v == null ? '—' : (i + 1)) + '</td>'
+                      + '<td><div><b>' + (p.Name || '') + '</b></div>'
+                      + '<div class="meta">' + loc + '</div></td>'
+                      + '<td class="value">' + valueFmt(SB_VAR, v) + '</td>';
+                    tr.addEventListener('click', function() { focusDc(p.Name); });
+                    frag.appendChild(tr);
+                });
+                tbody.appendChild(frag);
+            }
+
+            function focusDc(name) {
+                var marker = markerByName[name];
+                if (!marker) return;
+                var latlng = marker.getLatLng();
+                map.setView(latlng, Math.max(map.getZoom(), 7), {animate: true});
+                // Walk up any parent cluster so we can open the real popup.
+                setTimeout(function() { marker.openPopup(); }, 350);
+
+                if (highlightRing) map.removeLayer(highlightRing);
+                highlightRing = L.circleMarker(latlng, {
+                    radius: 16, color: '#e6a800', weight: 3, fill: false,
+                    interactive: false,
+                }).addTo(map);
+
+                document.querySelectorAll('#sb-table tbody tr').forEach(function(tr) {
+                    tr.classList.toggle('active', tr.dataset.name === name);
+                });
+                var active = document.querySelector('#sb-table tr.active');
+                if (active) active.scrollIntoView({block: 'nearest'});
+            }
+
+            // Marker click → highlight row too (without re-panning).
+            clusterLayers.forEach(function(layer) {
+                layer.on('click', function(e) {
+                    var name = e.layer && e.layer.feature && e.layer.feature.properties && e.layer.feature.properties.Name;
+                    if (!name) return;
+                    document.querySelectorAll('#sb-table tbody tr').forEach(function(tr) {
+                        tr.classList.toggle('active', tr.dataset.name === name);
+                    });
+                    var active = document.querySelector('#sb-table tr.active');
+                    if (active) active.scrollIntoView({block: 'nearest'});
+                });
+            });
+
+            document.getElementById('sb-var').addEventListener('change', function(e) {
+                SB_VAR = e.target.value; renderTable();
+            });
+            document.getElementById('sb-dir').addEventListener('change', function(e) {
+                SB_DIR = e.target.value; renderTable();
+            });
+
+            // Collapse toggle — also triggers map.invalidateSize so Leaflet
+            // re-computes tile bounds after the layout shift.
+            document.getElementById('sidebar-toggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+                setTimeout(function() { map.invalidateSize(); }, 260);
+            });
+
+            renderTable();
+        })();
+        </script>
     </body>
 </html>
