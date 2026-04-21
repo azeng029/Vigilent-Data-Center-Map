@@ -19,12 +19,30 @@
         #app { display: flex; height: 100vh; }
         #sidebar { width: 380px; display: flex; flex-direction: column;
                    border-right: 1px solid #ddd; background: #fafafa;
-                   transition: margin-left 0.25s ease; }
+                   transition: margin-left 0.25s ease; position: relative; }
         #sidebar.collapsed { margin-left: -380px; }
-        #sidebar-header { padding: 12px 14px 8px 14px; border-bottom: 1px solid #e2e2e2;
-                          background: #fff; }
+        #sidebar-header { padding: 12px 44px 8px 14px; border-bottom: 1px solid #e2e2e2;
+                          background: #fff; position: relative; }
         #sidebar-header h2 { margin: 0 0 8px 0; font-size: 14px; color: #1b285b;
                              font-weight: 700; }
+        /* Collapse button sits inside the sidebar header at top-right. */
+        #sidebar-toggle { position: absolute; top: 10px; right: 10px; z-index: 1000;
+                          width: 28px; height: 28px; border-radius: 6px;
+                          background: #1b285b; color: #fff; border: 0;
+                          font-size: 16px; line-height: 1; cursor: pointer;
+                          box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+                          display: flex; align-items: center; justify-content: center; }
+        #sidebar-toggle:hover { background: #2a3a80; }
+        /* When collapsed, show a separate floating button on the map that
+           expands the sidebar. Sits clear of Leaflet's zoom controls. */
+        #sidebar-expand { position: absolute; top: 14px; left: 14px; z-index: 1100;
+                          width: 44px; height: 44px; border-radius: 8px;
+                          background: #1b285b; color: #fff; border: 0;
+                          font-size: 20px; line-height: 1; cursor: pointer;
+                          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                          display: none; align-items: center; justify-content: center; }
+        #sidebar-expand:hover { background: #2a3a80; }
+        body.sidebar-collapsed #sidebar-expand { display: flex; }
         #sidebar-header .controls { display: flex; gap: 6px; }
         #sidebar-header select { flex: 1; padding: 5px 7px; border: 1px solid #ccc;
                                  border-radius: 4px; font-size: 12px; background: #fff; }
@@ -47,17 +65,13 @@
         #sb-table .meta { font-size: 10px; color: #888; margin-top: 1px; }
         #map-wrap { flex: 1; position: relative; }
         #map { width: 100%; height: 100%; padding: 0; margin: 0; }
-        #sidebar-toggle { position: absolute; top: 12px; left: 12px; z-index: 1000;
-                          background: #fff; border: 1px solid #bbb; border-radius: 4px;
-                          padding: 6px 10px; font-size: 13px; font-weight: 600;
-                          cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-        #sidebar-toggle:hover { background: #f0f0f0; }
         </style>
         <title>Vigilent Data Center Map</title>
     </head>
     <body>
         <div id="app">
             <aside id="sidebar">
+                <button id="sidebar-toggle" title="Collapse sidebar" aria-label="Collapse sidebar">&#9664;</button>
                 <div id="sidebar-header">
                     <h2>Rank Data Centers</h2>
                     <div class="controls">
@@ -86,7 +100,7 @@
                 </div>
             </aside>
             <div id="map-wrap">
-                <button id="sidebar-toggle" title="Toggle sidebar">☰</button>
+                <button id="sidebar-expand" title="Open sidebar" aria-label="Open sidebar">&#9776;</button>
                 <div id="map"></div>
             </div>
         </div>
@@ -2854,11 +2868,18 @@
                 SB_DIR = e.target.value; renderTable();
             });
 
-            // Collapse toggle — also triggers map.invalidateSize so Leaflet
-            // re-computes tile bounds after the layout shift.
-            document.getElementById('sidebar-toggle').addEventListener('click', function() {
-                document.getElementById('sidebar').classList.toggle('collapsed');
+            // Collapse/expand toggle — also triggers map.invalidateSize so
+            // Leaflet re-computes tile bounds after the layout shift.
+            function setCollapsed(collapsed) {
+                document.getElementById('sidebar').classList.toggle('collapsed', collapsed);
+                document.body.classList.toggle('sidebar-collapsed', collapsed);
                 setTimeout(function() { map.invalidateSize(); }, 260);
+            }
+            document.getElementById('sidebar-toggle').addEventListener('click', function() {
+                setCollapsed(true);
+            });
+            document.getElementById('sidebar-expand').addEventListener('click', function() {
+                setCollapsed(false);
             });
 
             renderTable();
