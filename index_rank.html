@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <title>Vigilent DC Rank Table</title>
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/MarkerCluster.css">
+    <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%;
+                     font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        #app { display: flex; height: 100vh; }
+        #sidebar { width: 440px; display: flex; flex-direction: column;
+                   border-right: 1px solid #ddd; background: #fafafa; }
+        #header { padding: 16px 18px 10px 18px; border-bottom: 1px solid #e2e2e2;
+                  background: #fff; }
+        #header h2 { margin: 0 0 12px 0; font-size: 16px; color: #1b285b; font-weight: 700; }
+        .controls { display: flex; gap: 8px; }
+        .controls select { flex: 1; padding: 6px 8px; border: 1px solid #ccc;
+                           border-radius: 4px; font-size: 13px; background: #fff; }
+        #count { padding: 8px 18px; font-size: 12px; color: #666;
+                 border-bottom: 1px solid #e2e2e2; background: #fff; }
+        #table-scroll { flex: 1; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead { position: sticky; top: 0; background: #f5f5f7;
+                box-shadow: 0 1px 0 #ddd; }
+        th { padding: 8px 12px; text-align: left; font-weight: 600;
+             color: #333; font-size: 12px; text-transform: uppercase;
+             letter-spacing: 0.5px; }
+        td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+        tr { cursor: pointer; transition: background 0.1s; }
+        tr:hover { background: #eef4fb; }
+        tr.active { background: #fff2b3; box-shadow: inset 3px 0 0 #e6a800; }
+        .rank-num { color: #888; width: 36px; }
+        .value { text-align: right; font-variant-numeric: tabular-nums;
+                 font-weight: 600; color: #1b285b; }
+        .meta { font-size: 11px; color: #888; margin-top: 2px; }
+        #map { flex: 1; }
+        .score-chip { display: inline-block; padding: 1px 6px; border-radius: 10px;
+                      font-size: 11px; font-weight: 600; color: #fff; }
+        .s-excellent { background: #25ac01; }
+        .s-good      { background: #1075e8; }
+        .s-moderate  { background: #e68a00; }
+        .s-low       { background: #888; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="sidebar">
+        <div id="header">
+            <h2>Rank Data Centers</h2>
+            <div class="controls">
+                <select id="var-select">
+                    <option value="composite_score">Vigilent Composite Score</option>
+                    <option value="state_province_composite">State / Province Score</option>
+                    <option value="savings_per_mw">Savings per MW</option>
+                    <option value="estimated_savings">Estimated Savings ($)</option>
+                    <option value="payback_years">Payback (years)</option>
+                    <option value="Size (MW)">Size (MW)</option>
+                    <option value="co2_avoided_metric_tons">CO₂ Avoided (MT)</option>
+                    <option value="electricity_price_used">Electricity Rate ($/kWh)</option>
+                </select>
+                <select id="dir-select">
+                    <option value="desc">High → Low</option>
+                    <option value="asc">Low → High</option>
+                </select>
+            </div>
+        </div>
+        <div id="count"></div>
+        <div id="table-scroll">
+            <table id="rank-table">
+                <thead>
+                    <tr>
+                        <th class="rank-num">#</th>
+                        <th>Data Center</th>
+                        <th style="text-align:right;">Value</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="map"></div>
+</div>
+
+<script src="js/leaflet.js"></script>
+<script src="js/leaflet.markercluster.js"></script>
+<script src="data/VigilentDataCenterDatabaseUS_22.js"></script>
+<script src="data/VigilentDataCenterDatabaseCanada_21.js"></script>
+<script src="data/VigilentDataCenterDatabaseEurope_20.js"></script>
+<script src="data/VigilentDataCenterDatabaseBrazil_19.js"></script>
+<script src="data/VigilentDataCenterDatabaseOther_23.js"></script>
+
+<script>
+// Merge all DCs; assign stable ids.
+var allDcs = [].concat(
+    json_VigilentDataCenterDatabaseUS_22.features,
+    json_VigilentDataCenterDatabaseCanada_21.features,
+    json_VigilentDataCenterDatabaseEurope_20.features,
+    json_VigilentDataCenterDatabaseBrazil_19.features,
+    json_VigilentDataCenterDatabaseOther_23.features
+);
+allDcs.forEach(function(f, i) { f.properties._id = i; });
+
+// --- Map ---
+var map = L.map('map').setView([30, 0], 2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd', maxZoom: 19,
+}).addTo(map);
+
+function scoreClass(s) {
+    return s == null ? 's-low'
+         : s >= 75  ? 's-excellent'
+         : s >= 50  ? 's-good'
+         : s >= 25  ? 's-moderate'
+                    : 's-low';
+}
+function scoreColor(s) {
+    return s == null ? '#888'
+         : s >= 75  ? '#25ac01'
+         : s >= 50  ? '#1075e8'
+         : s >= 25  ? '#e68a00'
+                    : '#888';
+}
+
+// Build markers
+var markerById = {};
+var highlightMarker = null;  // the "active" highlight ring
+allDcs.forEach(function(f) {
+    var c = f.geometry.coordinates;
+    var score = f.properties.composite_score;
+    var m = L.circleMarker([c[1], c[0]], {
+        radius: 6, color: '#222', weight: 1,
+        fillColor: scoreColor(score), fillOpacity: 0.85,
+    });
+    m.on('click', function() {
+        setActive(f.properties._id, {skipMapPan: true});
+    });
+    m.bindPopup(buildPopup(f), {maxWidth: 280});
+    m.addTo(map);
+    markerById[f.properties._id] = m;
+});
+
+function buildPopup(f) {
+    var p = f.properties;
+    var mw = p['Size (MW)'] != null ? p['Size (MW)'] + ' MW' : 'N/A';
+    var sc = p.composite_score;
+    var chip = '<span class="score-chip ' + scoreClass(sc) + '">'
+             + (sc != null ? sc.toFixed(1) : 'N/A') + '</span>';
+    return '<div style="font-family:inherit;">'
+         + '<div style="font-weight:700;color:#1b285b;font-size:14px;">' + (p.Name || '') + '</div>'
+         + '<div style="color:#666;font-size:12px;margin-bottom:6px;">'
+         + (p.City || '') + (p['State/Province'] ? ', ' + p['State/Province'] : '')
+         + (p.Country && p.Country !== 'USA' ? ', ' + p.Country : '') + '</div>'
+         + '<div style="font-size:12px;color:#444;margin-bottom:4px;">' + (p.Operator || '') + '</div>'
+         + '<table style="width:100%;font-size:12px;border-collapse:collapse;">'
+         + '<tr><td>Size</td><td style="text-align:right;">' + mw + '</td></tr>'
+         + '<tr><td>Composite Score</td><td style="text-align:right;">' + chip + '</td></tr>'
+         + (p.state_province_composite != null
+             ? '<tr><td>State/Province Score</td><td style="text-align:right;">'
+               + p.state_province_composite.toFixed(1) + '/100</td></tr>' : '')
+         + (p.savings_per_mw != null
+             ? '<tr><td>Savings/MW</td><td style="text-align:right;">$'
+               + Number(p.savings_per_mw).toLocaleString() + '</td></tr>' : '')
+         + (p.payback_years != null
+             ? '<tr><td>Payback</td><td style="text-align:right;">'
+               + p.payback_years.toFixed(2) + ' yr</td></tr>' : '')
+         + '</table></div>';
+}
+
+// --- Table ---
+var VAR = 'composite_score';
+var DIR = 'desc';
+
+function valueFmt(variable, v) {
+    if (v == null || v === '') return '—';
+    if (typeof v !== 'number') return v;
+    if (variable === 'estimated_savings' || variable === 'savings_per_mw') {
+        return '$' + Math.round(v).toLocaleString();
+    }
+    if (variable === 'payback_years') return v.toFixed(2) + ' yr';
+    if (variable === 'Size (MW)') return v + ' MW';
+    if (variable === 'co2_avoided_metric_tons') return Math.round(v).toLocaleString() + ' MT';
+    if (variable === 'electricity_price_used') return '$' + v.toFixed(4) + '/kWh';
+    return v.toFixed(1);
+}
+
+function renderTable() {
+    var sorted = allDcs.slice().sort(function(a, b) {
+        var va = a.properties[VAR], vb = b.properties[VAR];
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return DIR === 'desc' ? vb - va : va - vb;
+    });
+
+    var scored = sorted.filter(function(f) { return f.properties[VAR] != null; });
+    document.getElementById('count').textContent =
+        scored.length + ' / ' + sorted.length + ' data centers with a value for this metric';
+
+    var tbody = document.querySelector('#rank-table tbody');
+    tbody.innerHTML = '';
+    sorted.forEach(function(f, i) {
+        var p = f.properties;
+        var v = p[VAR];
+        var tr = document.createElement('tr');
+        tr.dataset.id = p._id;
+        var loc = (p.City || '') + (p['State/Province'] ? ', ' + p['State/Province'] : '');
+        if (p.Country && p.Country !== 'USA') loc += ', ' + p.Country;
+        tr.innerHTML =
+            '<td class="rank-num">' + (v == null ? '—' : i + 1) + '</td>'
+          + '<td><div><b>' + (p.Name || '') + '</b></div>'
+          + '<div class="meta">' + loc + ' · ' + (p.Operator || '') + '</div></td>'
+          + '<td class="value">' + valueFmt(VAR, v) + '</td>';
+        tr.addEventListener('click', function() { setActive(p._id); });
+        tbody.appendChild(tr);
+    });
+}
+
+function setActive(id, opts) {
+    opts = opts || {};
+    var marker = markerById[id];
+    if (!marker) return;
+
+    if (!opts.skipMapPan) {
+        map.setView(marker.getLatLng(), Math.max(map.getZoom(), 6), {animate: true});
+    }
+    marker.openPopup();
+
+    if (highlightMarker) map.removeLayer(highlightMarker);
+    highlightMarker = L.circleMarker(marker.getLatLng(), {
+        radius: 14, color: '#e6a800', weight: 3,
+        fill: false, interactive: false,
+    }).addTo(map);
+
+    document.querySelectorAll('#rank-table tbody tr').forEach(function(tr) {
+        tr.classList.toggle('active', parseInt(tr.dataset.id, 10) === id);
+    });
+    var active = document.querySelector('#rank-table tr.active');
+    if (active) active.scrollIntoView({block: 'nearest'});
+}
+
+// Control wiring
+document.getElementById('var-select').addEventListener('change', function(e) {
+    VAR = e.target.value;
+    renderTable();
+});
+document.getElementById('dir-select').addEventListener('change', function(e) {
+    DIR = e.target.value;
+    renderTable();
+});
+
+renderTable();
+</script>
+</body>
+</html>

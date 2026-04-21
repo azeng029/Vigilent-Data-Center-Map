@@ -40,22 +40,66 @@ DEFAULTS = {
     "energy_pct_opex": 0.40,    # 40% — typical for large DCs (Gartner, McKinsey)
 }
 
-# --- State commercial electricity rates (EIA / GIS data, $/kWh) ---
+# --- State / province commercial electricity rates ($/kWh) ---
+# Values for non-US rows mirror the map's commercial electricity rate layers
+# (data/EuropeCommercialElectricityRateskWh_13.js,
+#  data/CanadaCommercialElectricityRatekWh_8.js,
+#  data/BrazilCommercialElectricityRateskWh_3.js).
 STATE_ELECTRICITY_RATES = {
-    "TX": 0.0912,   # Source: EIA, matches GIS layer
-    "NY": 0.2254,   # Source: EIA, matches GIS layer
-    "CO": 0.1332,   # Source: EIA, matches GIS layer
-    "NV": 0.0991,   # Source: EIA, matches GIS layer
-    "OH": 0.1155,   # Source: EIA, matches GIS layer
-    "MA": 0.2340,   # Source: EIA, matches GIS layer
-    "CA": 0.2500,   # Source: EIA state average (not in GIS 14-DC set)
-    "VA": 0.0973,   # Source: EIA, matches GIS layer
-    "WA": 0.1100,   # Source: EIA state average (not in GIS 14-DC set)
-    "OR": 0.1136,   # Source: EIA, matches GIS layer
-    "MN": 0.1322,   # Source: EIA, matches GIS layer
-    "MS": 0.1267,   # Source: EIA, matches GIS layer
-    "NJ": 0.1600,   # Source: EIA state average
-    "MI": 0.1267,   # Source: EIA — CSV lists C Spire Starkville as MI (likely MS typo)
+    # US (EIA, matches GIS layer)
+    "TX": 0.0912, "NY": 0.2254, "CO": 0.1332, "NV": 0.0991, "OH": 0.1155,
+    "MA": 0.2340, "CA": 0.2500, "VA": 0.0973, "WA": 0.1100, "OR": 0.1136,
+    "MN": 0.1322, "MS": 0.1267, "NJ": 0.1600, "CT": 0.2389,
+    "MI": 0.1267,   # CSV lists C Spire Starkville as MI (likely MS typo)
+
+    # Canada (province-level, from CanadaCommercialElectricityRatekWh layer)
+    "Newfoundland and Labrador": 0.0794, "Prince Edward Island": 0.1004,
+    "Nova Scotia": 0.0895, "New Brunswick": 0.0548, "Quebec": 0.0269,
+    "Ontario": 0.1037,    "Manitoba": 0.0286, "Saskatchewan": 0.0548,
+    "Alberta": 0.0683,    "British Columbia": 0.0493, "Yukon": 0.1021,
+    "Northwest Territories": 0.2052, "Nunavut": 0.4532,
+
+    # Brazil (state-level, from BrazilCommercialElectricityRateskWh layer)
+    "Rio Grande do Sul": 0.1557, "Roraima": 0.1215, "Pará": 0.1861,
+    "Acre": 0.1652, "Amapá": 0.1614, "Mato Grosso do Sul": 0.1671,
+    "Paraná": 0.1215, "Santa Catarina": 0.1329, "Amazonas": 0.1595,
+    "Rondônia": 0.1595, "Mato Grosso": 0.1614, "Maranhão": 0.1595,
+    "Piauí": 0.1804, "Ceará": 0.1348, "Rio Grande do Norte": 0.1405,
+    "Paraíba": 0.1291, "Pernambuco": 0.1462, "Alagoas": 0.1538,
+    "Sergipe": 0.1348, "Bahia": 0.1595, "Espírito Santo": 0.15,
+    "Rio de Janeiro": 0.1766, "São Paulo": 0.1386, "Goiás": 0.169,
+    "Distrito Federal": 0.1576, "Minas Gerais": 0.1633, "Tocantins": 0.1766,
+}
+
+# --- Country-level commercial rates ($/kWh), fallback when state/province
+# isn't in the table above (Europe country polygons + Asia country averages).
+COUNTRY_ELECTRICITY_RATES = {
+    # Europe (from EuropeCommercialElectricityRateskWh layer)
+    "Norway": 0.085, "Sweden": 0.11, "Germany": 0.21, "Netherlands": 0.19,
+    "Croatia": 0.25, "Finland": 0.089, "France": 0.16, "Greece": 0.19,
+    "Italy": 0.20, "United Kingdom": 0.34, "Estonia": 0.15, "Latvia": 0.16,
+    "Lithuania": 0.18, "Macedonia": 0.15, "Albania": 0.16, "Ireland": 0.30,
+    "Austria": 0.21, "Slovenia": 0.16, "Hungary": 0.23, "Kosovo": 0.17,
+    "Serbia": 0.14, "Montenegro": 0.094, "Belgium": 0.18, "Switzerland": 0.304,
+    "Bosnia and Herz.": 0.13, "Slovakia": 0.19, "Czechia": 0.19,
+    "Bulgaria": 0.17, "Romania": 0.18, "Spain": 0.14, "Cyprus": 0.19,
+    "Turkey": 0.10, "Malta": 0.15, "Iceland": 0.101, "Denmark": 0.14,
+    "Portugal": 0.13, "Luxembourg": 0.20, "Poland": 0.15,
+
+    # Asia / Oceania — no map layer; commercial-tariff averages (public sources)
+    "India": 0.10,       # CEA national avg industrial tariff ~₹8.3/kWh
+    "Singapore": 0.25,   # EMA non-residential tariff, 2024
+    "Thailand": 0.13,    # MEA commercial TOU avg, 2024
+    "Japan": 0.20,       # TEPCO commercial tariff, 2024
+    "Australia": 0.28,   # AER commercial tariff national avg, 2024
+    "New Zealand": 0.18, # Commercial tariff, 2024
+    "South Korea": 0.12, # KEPCO commercial, 2024
+    "Hong Kong": 0.18,   # CLP/HK Electric commercial
+    "Taiwan": 0.14,      # TaiPower commercial
+
+    # Country-name aliases used in CSV rows
+    "USA": None,         # US handled via state table — sentinel to skip
+    "The Netherlands": 0.19, "NEtherlands": 0.19,
 }
 
 # --- Representative zip codes for EJ impact (city-level) ---
@@ -135,23 +179,31 @@ def score_datacenter(row):
     name = row["Name"].strip()
     city = row["City"].strip()
     state = row["State/Province"].strip()
+    country = row.get("Country", "").strip()
     mw = parse_mw(row.get("Size (MW)", ""))
 
     if mw is None or mw <= 0:
         return None
 
-    # Resolve electricity price from state rates
+    # Resolve electricity price: state/province first, then country, then default.
     elec_price = STATE_ELECTRICITY_RATES.get(state)
+    rate_source = "state-level" if elec_price is not None else None
     if elec_price is None:
-        print(f"  WARNING: No electricity rate for state '{state}', using $0.12/kWh")
+        elec_price = COUNTRY_ELECTRICITY_RATES.get(country)
+        if elec_price is not None:
+            rate_source = "country-level"
+    if elec_price is None:
+        print(f"  WARNING: No electricity rate for '{state}' / '{country}', "
+              f"using $0.12/kWh")
         elec_price = 0.12
+        rate_source = "default"
 
     # Track which inputs are real vs. estimated
     real_inputs = ["dc_size_mw", "city", "state"]
     estimated_inputs = []
 
-    if state in STATE_ELECTRICITY_RATES:
-        real_inputs.append("electricity_price (state-level)")
+    if rate_source in ("state-level", "country-level"):
+        real_inputs.append(f"electricity_price ({rate_source})")
     else:
         estimated_inputs.append("electricity_price")
 
