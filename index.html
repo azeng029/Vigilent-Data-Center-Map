@@ -2094,14 +2094,39 @@
             }
             return colors[colors.length - 1];
         }
-        var ELEC_BREAKS  = [8, 14, 20, 30, 46];
-        var ELEC_COLORS  = ['#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000'];
-        var WATER_BREAKS = [3, 7, 12, 20, 41];
-        var WATER_COLORS = ['#f1eef6','#bdc9e1','#74a9cf','#2b8cbe','#045a8d'];
-        var REG_BREAKS   = [0, 2, 4, 7];
-        var REG_COLORS   = ['#f7fcfd','#bfd3e6','#8c96c6','#6e016b'];
-        var COMP_BREAKS  = [20, 40, 60, 80, 100];
-        var COMP_COLORS  = ['#ffffb2','#fecc5c','#fd8d3c','#f03b20','#bd0026'];
+        // Ramps match the original per-region QGIS style so the global layers
+        // look like a seamless extension of the legacy ones. Alpha already
+        // encodes the 0.75 fill opacity requested in D2.
+        var ELEC_BREAKS  = [7.44, 11.65, 15.18, 20.54, 29.40, 50];
+        var ELEC_COLORS  = [
+            'rgba(255,255,0,0.75)',      // 0..7.44
+            'rgba(255,255,0,0.75)',      // 7.44..11.65
+            'rgba(254,204,92,0.75)',     // 11.65..15.18
+            'rgba(253,141,60,0.75)',     // 15.18..20.54
+            'rgba(240,59,32,0.75)',      // 20.54..29.40
+            'rgba(189,0,38,0.75)'        // 29.40+
+        ];
+        var WATER_BREAKS = [5.1, 8.7, 12.0, 15.8, 19.6, 50];
+        var WATER_COLORS = [
+            'rgba(185,185,185,0.75)',    // 0..5.1
+            'rgba(185,185,185,0.75)',    // 5.1..8.7
+            'rgba(189,201,225,0.75)',    // 8.7..12.0
+            'rgba(115,178,216,0.75)',    // 12.0..15.8
+            'rgba(41,121,185,0.75)',     // 15.8..19.6
+            'rgba(8,48,107,0.75)'        // 19.6+
+        ];
+        var REG_BREAKS   = [0, 1, 10];
+        var REG_COLORS   = [
+            'rgba(247,251,255,0.75)',    // 0
+            'rgba(189,201,225,0.75)',    // 1
+            'rgba(115,178,216,0.75)'     // 2+
+        ];
+        var COMP_BREAKS  = [33, 67, 100];
+        var COMP_COLORS  = [
+            'rgba(247,252,245,0.75)',    // 0..33
+            'rgba(123,199,124,0.75)',    // 33..67
+            'rgba(0,68,27,0.75)'         // 67..100
+        ];
 
         function makeGlobalStyle(paneName, breaks, colors) {
             return function(feature) {
@@ -2452,7 +2477,9 @@
         {label: '<b>Global Water</b> ($/1000 gal)', layer: layer_GlobalWater},
         {label: '<b>Global Regulations</b> (count)', layer: layer_GlobalRegulations},
         {label: '<b>Global Composite</b> (0-100)', layer: layer_GlobalComposite},
-        {label: '<i>— Regional layers (legacy) —</i>', selectAllCheckbox: false, children: [
+        // Legacy per-region layers — kept loaded in memory but hidden from the
+        // layer tree so the global gradients display cleanly.
+        /*
         {label: '<b>Commercial Water Rates</b> ($/1000 gal)', selectAllCheckbox: true, children: [
             {label: 'US<br /><table><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_51870.png" /></td><td>5.1 - 8.7</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_871201.png" /></td><td>8.7 - 12.0</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1201582.png" /></td><td>12.0 - 15.8</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1581963.png" /></td><td>15.8 - 19.6</td></tr><tr><td style="text-align: center;"><img src="legend/USCommercialWaterRates1000gallons_18_1962294.png" /></td><td>19.6 - 22.9</td></tr></table>', layer: layer_USCommercialWaterRates1000gallons_18},
             {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_0050.png" /></td><td>0 - 0.5</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_05121.png" /></td><td>0.5 - 1.2</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_12362.png" /></td><td>1.2 - 3.6</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_36613.png" /></td><td>3.6 - 6.1</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCommercialWaterRate1000gallons_9_61834.png" /></td><td>6.1 - 8.3</td></tr></table>', layer: layer_CanadaCommercialWaterRate1000gallons_9},
@@ -2473,7 +2500,9 @@
             {label: 'Canada<br /><table><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/CanadaCompositeScore_6_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_CanadaCompositeScore_6},
             {label: 'Europe<br /><table><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/EuropeCompositeScore_11_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_EuropeCompositeScore_11},
             {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_BrazilCompositeScore_1},]},
-        ]},
+        ]
+        */
+        ,
             // Canada and Brazil outlines always visible (not toggleable)
             {label: '<img src="legend/WorldMap_0.png" /> World Map', layer: layer_WorldMap_0},]
         var lay = L.control.layers.tree(null, overlaysTree,{

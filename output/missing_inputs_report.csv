@@ -52,11 +52,11 @@ RJ2,Rio de Janeiro,Rio de Janeiro,9.0,73.53,Good,83.65,59.05,24.6,baseline_pue; 
 nLighten Amsterdam AMS ll,Schiphol-Rijk,,4.2,72.73,Good,81.07,56.54,24.53,baseline_pue; load_growth_rate; energy_pct_opex,63.42,75.5,67.59,77.84,70.73,74.73,HIGH
 RJ1 Botafogo,Rio de Janeiro,Rio de Janeiro,1.0,51.69,Good,62.83,38.32,24.51,baseline_pue; load_growth_rate; energy_pct_opex,44.74,56.43,46.96,56.42,49.69,53.69,HIGH
 EQR21,Clifton,NJ,30.0,72.75,Good,84.24,59.77,24.47,baseline_pue; load_growth_rate; energy_pct_opex,66.15,77.39,68.1,77.4,70.75,74.75,HIGH
-Rio de Janeiro 1,Vinhedo,Rio de Janeiro,10.0,73.85,Good,83.91,59.48,24.43,baseline_pue; load_growth_rate; energy_pct_opex,66.07,78.47,68.98,78.7,71.85,75.85,HIGH
-C Spire Starkville,Starkville,MI,1.5,42.99,Moderate,56.29,31.9,24.39,baseline_pue; load_growth_rate; energy_pct_opex,38.01,48.8,38.66,47.33,40.99,44.99,HIGH
+C Spire Starkville,Starkville,MS,1.5,42.99,Moderate,56.29,31.9,24.39,baseline_pue; load_growth_rate; energy_pct_opex,38.01,48.8,38.66,47.33,40.99,44.99,HIGH
 NYM1,Newark,NJ,40.0,73.01,Good,84.45,60.13,24.32,baseline_pue; load_growth_rate; energy_pct_opex,66.49,77.62,68.37,77.65,71.01,75.01,HIGH
 Piscataway 1,Piscataway,NJ,65.0,73.31,Good,84.7,60.53,24.17,baseline_pue; load_growth_rate; energy_pct_opex,66.88,77.88,68.69,77.94,71.31,75.31,HIGH
 14 Rue de l'orme a moineaux PAR13,Les Ulis,,80.0,73.4,Good,84.78,60.66,24.12,baseline_pue; load_growth_rate; energy_pct_opex,66.99,77.96,68.79,78.02,71.4,75.4,HIGH
+Rio de Janeiro 1,Vinhedo,São Paulo,10.0,66.44,Good,77.59,53.53,24.06,baseline_pue; load_growth_rate; energy_pct_opex,59.93,70.84,61.84,71.03,64.44,68.44,HIGH
 Equinix HE3,Helsinki,,5.0,50.14,Good,60.78,36.77,24.01,baseline_pue; load_growth_rate; energy_pct_opex,43.35,54.21,45.57,54.67,48.14,52.14,HIGH
 11-15 Rue Galilee (PAR6),Paris,,1.0,48.8,Moderate,60.1,36.19,23.91,baseline_pue; load_growth_rate; energy_pct_opex,42.5,53.29,44.2,53.4,46.8,50.8,HIGH
 ITENOS Frankfurt 3,Eschborn,Hesse,2.4,70.95,Good,78.04,54.14,23.9,baseline_pue; load_growth_rate; energy_pct_opex,61.38,72.34,67.08,74.72,68.95,72.95,HIGH
