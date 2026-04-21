@@ -150,17 +150,27 @@
         <script src="data/GlobalComposite.js"></script>
         <script>
         var map = L.map('map', {
-            zoomControl:false, maxZoom:28, minZoom:1
+            zoomControl:false, maxZoom:28, minZoom:2,
+            // Constrain to a single copy of the world so panning far left/right
+            // can never reveal an empty basemap copy where choropleths and
+            // markers don't exist.
+            maxBounds: [[-85, -180], [85, 180]],
+            maxBoundsViscosity: 1.0,
+            worldCopyJump: true,
         }).fitBounds([[-4.0151388104335695,-153.752379172326],[85.73759822358907,-32.0818835913536]]);
         var hash = new L.Hash(map);
 
-        // Streets basemap — CartoDB Voyager tiles (light, city-name-rich)
+        // Streets basemap — CartoDB Voyager tiles (light, city-name-rich).
+        // noWrap pairs with the map's maxBounds so only one copy of the world
+        // ever renders.
         var streetsBasemap = L.tileLayer(
             'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
             {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 19,
+                noWrap: true,
+                bounds: [[-90, -180], [90, 180]],
             }
         );
         streetsBasemap.addTo(map);
