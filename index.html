@@ -33,13 +33,16 @@
                           box-shadow: 0 1px 3px rgba(0,0,0,0.25);
                           display: flex; align-items: center; justify-content: center; }
         #sidebar-toggle:hover { background: #2a3a80; }
-        /* When collapsed, show a separate floating button on the map that
-           expands the sidebar. Sits clear of Leaflet's zoom controls. */
-        #sidebar-expand { position: absolute; top: 14px; left: 14px; z-index: 1100;
-                          width: 44px; height: 44px; border-radius: 8px;
+        /* When collapsed, an "expand" tab hugs the left edge of the map at
+           the vertical middle — clear of Leaflet's zoom controls (top-left),
+           operator filter (top-right), and legends (bottom). */
+        #sidebar-expand { position: absolute; top: 50%; left: 0; z-index: 1100;
+                          transform: translateY(-50%);
+                          width: 28px; height: 72px;
+                          border-radius: 0 8px 8px 0;
                           background: #1b285b; color: #fff; border: 0;
-                          font-size: 20px; line-height: 1; cursor: pointer;
-                          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                          font-size: 18px; line-height: 1; cursor: pointer;
+                          box-shadow: 2px 2px 10px rgba(0,0,0,0.25);
                           display: none; align-items: center; justify-content: center; }
         #sidebar-expand:hover { background: #2a3a80; }
         body.sidebar-collapsed #sidebar-expand { display: flex; }
@@ -100,7 +103,7 @@
                 </div>
             </aside>
             <div id="map-wrap">
-                <button id="sidebar-expand" title="Open sidebar" aria-label="Open sidebar">&#9776;</button>
+                <button id="sidebar-expand" title="Open sidebar" aria-label="Open sidebar">&#9654;</button>
                 <div id="map"></div>
             </div>
         </div>
