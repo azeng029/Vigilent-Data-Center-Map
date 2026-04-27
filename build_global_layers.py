@@ -82,6 +82,87 @@ REGIONS = [
         "water_key": "Brazil Statistics_Commercial Water Rate ($/1000 gallons)",
         "reg_key":   "Brazil Statistics_Regulations",
     },
+    {
+        "region": "India",
+        "name_key": "NAME",
+        "elec_file":  "IndiaCommercialElectricityRateskWh_22.js",
+        "water_file": "IndiaCommercialWaterRates1000gallons_23.js",
+        "reg_file":   "IndiaRegulationsByQuantity_24.js",
+        "elec_key":  "India Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "India Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "India Statistics_Regulations",
+    },
+    # APAC additions (built 2026-04-27 via build_apac_layers.py)
+    {
+        "region": "Australia",
+        "name_key": "NAME",
+        "elec_file":  "AustraliaCommercialElectricityRateskWh_30.js",
+        "water_file": "AustraliaCommercialWaterRates1000gallons_31.js",
+        "reg_file":   "AustraliaRegulationsByQuantity_32.js",
+        "elec_key":  "Australia Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Australia Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Australia Statistics_Regulations",
+    },
+    {
+        "region": "Singapore",
+        "name_key": "NAME",
+        "elec_file":  "SingaporeCommercialElectricityRateskWh_31.js",
+        "water_file": "SingaporeCommercialWaterRates1000gallons_32.js",
+        "reg_file":   "SingaporeRegulationsByQuantity_33.js",
+        "elec_key":  "Singapore Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Singapore Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Singapore Statistics_Regulations",
+    },
+    {
+        "region": "Thailand",
+        "name_key": "NAME",
+        "elec_file":  "ThailandCommercialElectricityRateskWh_32.js",
+        "water_file": "ThailandCommercialWaterRates1000gallons_33.js",
+        "reg_file":   "ThailandRegulationsByQuantity_34.js",
+        "elec_key":  "Thailand Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Thailand Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Thailand Statistics_Regulations",
+    },
+    {
+        "region": "Vietnam",
+        "name_key": "NAME",
+        "elec_file":  "VietnamCommercialElectricityRateskWh_33.js",
+        "water_file": "VietnamCommercialWaterRates1000gallons_34.js",
+        "reg_file":   "VietnamRegulationsByQuantity_35.js",
+        "elec_key":  "Vietnam Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Vietnam Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Vietnam Statistics_Regulations",
+    },
+    {
+        "region": "Malaysia",
+        "name_key": "NAME",
+        "elec_file":  "MalaysiaCommercialElectricityRateskWh_34.js",
+        "water_file": "MalaysiaCommercialWaterRates1000gallons_35.js",
+        "reg_file":   "MalaysiaRegulationsByQuantity_36.js",
+        "elec_key":  "Malaysia Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Malaysia Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Malaysia Statistics_Regulations",
+    },
+    {
+        "region": "Indonesia",
+        "name_key": "NAME",
+        "elec_file":  "IndonesiaCommercialElectricityRateskWh_35.js",
+        "water_file": "IndonesiaCommercialWaterRates1000gallons_36.js",
+        "reg_file":   "IndonesiaRegulationsByQuantity_37.js",
+        "elec_key":  "Indonesia Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Indonesia Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Indonesia Statistics_Regulations",
+    },
+    {
+        "region": "Philippines",
+        "name_key": "NAME",
+        "elec_file":  "PhilippinesCommercialElectricityRateskWh_36.js",
+        "water_file": "PhilippinesCommercialWaterRates1000gallons_37.js",
+        "reg_file":   "PhilippinesRegulationsByQuantity_38.js",
+        "elec_key":  "Philippines Statistics_Commercial Electricity Rate (¢/kWh)",
+        "water_key": "Philippines Statistics_Commercial Water Rate ($/1000 gallons)",
+        "reg_key":   "Philippines Statistics_Regulations",
+    },
 ]
 
 OUTPUTS = {
@@ -194,20 +275,23 @@ def main():
     print(f"  regulations:   {ext['reg_count'][0]} .. {ext['reg_count'][1]}  statutes")
 
     # --- Build 4 feature collections ---
+    # Missing-data rule (per Adam, 2026-04-27):
+    #   • Popup-visible fields keep the original null so popups display "N/A"
+    #   • Gradient `value` and composite math substitute 0 in place of null
+    #     so the polygon still renders (lowest gradient bin) and the composite
+    #     score stays computable instead of dropping the polygon entirely.
     feats_elec, feats_water, feats_reg, feats_comp = [], [], [], []
     for r in rows:
         en = safe_norm(r["elec"],      *ext["elec"])
         wn = safe_norm(r["water"],     *ext["water"])
         rn = safe_norm(r["reg_count"], *ext["reg_count"])
-
-        composite = None
-        if en is not None and wn is not None and rn is not None:
-            composite = round(
-                WEIGHTS["electricity"] * en
-                + WEIGHTS["water"]       * wn
-                + WEIGHTS["regulations"] * rn,
-                2,
-            )
+        # Composite always computes — substitute 0 for any missing component
+        composite = round(
+            WEIGHTS["electricity"] * (en if en is not None else 0.0)
+            + WEIGHTS["water"]       * (wn if wn is not None else 0.0)
+            + WEIGHTS["regulations"] * (rn if rn is not None else 0.0),
+            2,
+        )
 
         base_props = {
             "Region": r["region"],
@@ -222,9 +306,14 @@ def main():
             "global_composite": composite,
         }
 
-        feats_elec.append(build_output_feature(r, {**base_props, "value": r["elec"]}))
-        feats_water.append(build_output_feature(r, {**base_props, "value": r["water"]}))
-        feats_reg.append(build_output_feature(r,   {**base_props, "value": r["reg_count"]}))
+        # Gradient values — substitute 0 when raw is None so polygon renders.
+        elec_val  = r["elec"]      if r["elec"]      is not None else 0
+        water_val = r["water"]     if r["water"]     is not None else 0
+        reg_val   = r["reg_count"] if r["reg_count"] is not None else 0
+
+        feats_elec.append(build_output_feature(r, {**base_props, "value": elec_val}))
+        feats_water.append(build_output_feature(r, {**base_props, "value": water_val}))
+        feats_reg.append(build_output_feature(r,   {**base_props, "value": reg_val}))
         feats_comp.append(build_output_feature(r,  {**base_props, "value": composite}))
 
     # --- Write 4 files ---

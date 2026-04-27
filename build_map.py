@@ -18,6 +18,7 @@ import re
 import random
 import openpyxl
 from vigilent_engine import compute_score, SCORING_CONFIG
+from operator_tiers import tier_for_operator, opex_pct_for_operator
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIG
@@ -36,7 +37,8 @@ VIGILENT_PARAMS = {
 DEFAULTS = {
     "baseline_pue": 1.55,
     "load_growth_rate": 0.10,
-    "energy_pct_opex": 0.40,
+    "energy_pct_opex": 0.40,    # wholesale-colo midline; operator-tier override applied per-DC
+    "capacity_factor": 0.70,    # Uptime Institute / IDC avg IT load utilization
 }
 
 # Region electricity rate property keys (from choropleth joins in GeoJSON)
@@ -200,6 +202,9 @@ def score_dc(dc, region):
         return None
 
     elec_price = get_electricity_price(dc, region)
+    operator_name = str(dc.get("Operator", "") or "").strip()
+    op_tier = tier_for_operator(operator_name)
+    energy_pct_opex = opex_pct_for_operator(operator_name)
 
     try:
         result = compute_score(
@@ -207,7 +212,8 @@ def score_dc(dc, region):
             baseline_pue=DEFAULTS["baseline_pue"],
             electricity_price=elec_price,
             load_growth_rate=DEFAULTS["load_growth_rate"],
-            energy_pct_opex=DEFAULTS["energy_pct_opex"],
+            energy_pct_opex=energy_pct_opex,
+            capacity_factor=DEFAULTS["capacity_factor"],
             **VIGILENT_PARAMS,
         )
     except Exception as e:
@@ -223,6 +229,9 @@ def score_dc(dc, region):
         "impact_on_opex_pct": round(result["impact_on_opex_pct"] * 100, 2),
         "estimated_savings": round(result["estimated_savings"], 2),
         "electricity_price_used": round(elec_price, 4),
+        "operator_tier": op_tier,
+        "energy_pct_opex": round(energy_pct_opex, 3),
+        "capacity_factor": DEFAULTS["capacity_factor"],
     }
 
 
@@ -349,6 +358,9 @@ def build_feature(dc, region, score_result, existing_props=None):
         props["impact_on_opex_pct"] = score_result["impact_on_opex_pct"]
         props["estimated_savings"] = score_result["estimated_savings"]
         props["electricity_price_used"] = score_result["electricity_price_used"]
+        props["operator_tier"] = score_result["operator_tier"]
+        props["energy_pct_opex"] = score_result["energy_pct_opex"]
+        props["capacity_factor"] = score_result["capacity_factor"]
 
     # Carry forward regional rate data for popups
     elec_key = REGION_ELEC_KEYS.get(region)

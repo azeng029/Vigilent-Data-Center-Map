@@ -56,6 +56,12 @@ DC_PARAMS = {
         "fmt": ".0%", "unit": "",
         "display_mult": 100,
     },
+    "capacity_factor": {
+        "label": "Capacity Factor (avg utilization)",
+        "min": 0.40, "max": 1.00, "default": 0.70, "step": 0.01,
+        "fmt": ".0%", "unit": "",
+        "display_mult": 100,
+    },
 }
 
 # Vigilent criteria — separate input box
@@ -99,6 +105,7 @@ def compute_score(
     energy_reduction_pct: float,
     water_reduction_pct: float,
     num_years: int = 1,
+    capacity_factor: float = 0.70,
     scoring_config: Optional[Dict] = None,
 ) -> Dict[str, Any]:
     """
@@ -116,8 +123,10 @@ def compute_score(
     cfg = scoring_config if scoring_config is not None else SCORING_CONFIG
 
     # --- Energy ---
+    # capacity_factor accounts for real-world IT load utilization (downtime,
+    # maintenance, redundancy headroom, growth ramp). 100% = always full load.
     total_mw = dc_size_mw * baseline_pue
-    annual_energy_kwh = total_mw * 1000 * 8760 * (1 + load_growth_rate)
+    annual_energy_kwh = total_mw * 1000 * 8760 * capacity_factor * (1 + load_growth_rate)
     annual_energy_cost = annual_energy_kwh * electricity_price
 
     # --- Savings ---
@@ -197,7 +206,7 @@ def compute_score_grid(
     """
     all_param_names = [
         "dc_size_mw", "baseline_pue", "electricity_price",
-        "load_growth_rate", "energy_pct_opex",
+        "load_growth_rate", "energy_pct_opex", "capacity_factor",
         "investment_cost", "energy_reduction_pct", "water_reduction_pct",
         "num_years",
     ]
@@ -232,6 +241,7 @@ def compute_score_grid(
 def compute_exhaustive_sweep(
     vigilent_params: Dict[str, float],
     steps: int = 15,
+    capacity_factor: float = 0.70,
     scoring_config: Optional[Dict] = None,
 ) -> tuple:
     """
@@ -274,7 +284,7 @@ def compute_exhaustive_sweep(
     inv = vigilent_params["investment_cost"]
 
     # Vectorized scoring — same math as compute_score() lines 118-163
-    savings_per_mw = P * 1000 * 8760 * (1 + G) * E * e_red
+    savings_per_mw = P * 1000 * 8760 * capacity_factor * (1 + G) * E * e_red
     payback = np.where(savings_per_mw > 0,
                        inv / (D * savings_per_mw), 999.0)
     impact_on_opex = e_red * O
@@ -997,6 +1007,7 @@ def compute_ej_impact(
     load_growth_rate: float,
     energy_reduction_pct: float,
     zip_code: str,
+    capacity_factor: float = 0.70,
 ) -> Optional[Dict[str, Any]]:
     """
     Compute the environmental justice impact of Vigilent at a given location.
@@ -1009,7 +1020,7 @@ def compute_ej_impact(
         return None
 
     # --- Energy calculation ---
-    total_energy_mwh = dc_size_mw * baseline_pue * 8760 * (1 + load_growth_rate)
+    total_energy_mwh = dc_size_mw * baseline_pue * 8760 * capacity_factor * (1 + load_growth_rate)
     energy_saved_mwh = total_energy_mwh * energy_reduction_pct
 
     # --- Carbon impact ---
@@ -1020,7 +1031,7 @@ def compute_ej_impact(
     water_saved_gallons = energy_saved_mwh * loc["water_intensity_gal_per_mwh"]
 
     # --- Grid strain relief ---
-    mw_freed = dc_size_mw * baseline_pue * energy_reduction_pct
+    mw_freed = dc_size_mw * baseline_pue * capacity_factor * energy_reduction_pct
     grid_relief_pct = (mw_freed / loc["peak_demand_mw"] * 100) if loc["peak_demand_mw"] > 0 else 0
 
     # --- EPA equivalencies ---
@@ -1107,7 +1118,8 @@ def compute_ej_impact(
 
 if __name__ == "__main__":
     # Verify against spreadsheet Sheet1 defaults
-    # (20MW, PUE=1.58, $0.10, 8% growth, 40% OPEX, $1.5M invest, 7.5% E.red, 4% W.red)
+    # (20MW, PUE=1.58, $0.10, 8% growth, 40% OPEX, $1.5M invest, 7.5% E.red, 4% W.red,
+    #  capacity_factor=0.70 — applied 2026-04 update)
     result = compute_score(
         dc_size_mw=20,
         baseline_pue=1.58,
@@ -1118,12 +1130,13 @@ if __name__ == "__main__":
         energy_reduction_pct=0.075,
         water_reduction_pct=0.04,
         num_years=1,
+        capacity_factor=0.70,
     )
 
     print("Vigilent Engine — Verification")
     print("=" * 50)
     print(f"Composite Score: {result['composite_score']:.2f}")
-    print(f"  Expected (spreadsheet Sheet1): ~64.15")
+    print(f"  Expected at CF=0.70: ~45.7  (was ~64.15 at CF=1.0)")
     print()
     for k, v in result["factor_scores"].items():
         w = SCORING_CONFIG[k]["weight"]

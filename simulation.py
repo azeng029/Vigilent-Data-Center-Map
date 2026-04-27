@@ -130,7 +130,7 @@ for k, meta in VIGILENT_PARAMS.items():
 
 # DC keys used by optimizer
 DC_KEYS = ["dc_size_mw", "baseline_pue", "electricity_price",
-           "load_growth_rate", "energy_pct_opex"]
+           "load_growth_rate", "energy_pct_opex", "capacity_factor"]
 
 SWEET_SPOT_THRESHOLD = 75
 
@@ -1379,6 +1379,7 @@ def use_fetched_rate(n_clicks, rate, x_param, y_param):
     Input("dc-slider-electricity_price", "value"),
     Input("dc-slider-load_growth_rate", "value"),
     Input("dc-slider-energy_pct_opex", "value"),
+    Input("dc-slider-capacity_factor", "value"),
     Input("vig-num_years", "value"),
     Input("vig-investment_cost", "value"),
     Input("vig-energy_reduction_pct", "value"),
@@ -1388,7 +1389,7 @@ def use_fetched_rate(n_clicks, rate, x_param, y_param):
 def update_heatmap(x_param, y_param,
                    x_bound_min, x_bound_max, y_bound_min, y_bound_max,
                    dc_size_mw, baseline_pue, electricity_price,
-                   load_growth_rate, energy_pct_opex,
+                   load_growth_rate, energy_pct_opex, capacity_factor,
                    num_years, investment_cost,
                    energy_reduction_pct, water_reduction_pct,
                    fetched_rate):
@@ -1400,6 +1401,7 @@ def update_heatmap(x_param, y_param,
         "electricity_price": electricity_price or DC_PARAMS["electricity_price"]["default"],
         "load_growth_rate": (load_growth_rate or 0) / DC_PARAMS["load_growth_rate"].get("display_mult", 1),
         "energy_pct_opex": (energy_pct_opex or 0) / DC_PARAMS["energy_pct_opex"].get("display_mult", 1),
+        "capacity_factor": (capacity_factor or 0) / DC_PARAMS["capacity_factor"].get("display_mult", 1),
     }
     vig_raw = {
         "num_years": int(num_years or VIGILENT_PARAMS["num_years"]["default"]),
@@ -2578,6 +2580,7 @@ _FINDER_PARAM_LABELS = {
     "electricity_price": "Electricity Price ($/kWh)",
     "load_growth_rate": "Load Growth Rate (%)",
     "energy_pct_opex": "Energy % of OPEX",
+    "capacity_factor": "Capacity Factor",
 }
 
 _FINDER_PARAM_FMT = {
@@ -2586,6 +2589,7 @@ _FINDER_PARAM_FMT = {
     "electricity_price": (".2f", "$/kWh", 1),
     "load_growth_rate": (".0f", "%", 100),
     "energy_pct_opex": (".0f", "%", 100),
+    "capacity_factor": (".0f", "%", 100),
 }
 
 
@@ -2646,7 +2650,7 @@ def run_finder(n_clicks, num_years, investment, energy_red, water_red, threshold
     # 2. Ranges table
     table_rows = []
     for param_key in ["dc_size_mw", "baseline_pue", "electricity_price",
-                       "load_growth_rate", "energy_pct_opex"]:
+                       "load_growth_rate", "energy_pct_opex", "capacity_factor"]:
         r = ranges[param_key]
         fmt, unit, mult = _FINDER_PARAM_FMT[param_key]
         label = _FINDER_PARAM_LABELS[param_key]

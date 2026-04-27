@@ -17,6 +17,7 @@ import csv
 import json
 import os
 from vigilent_engine import compute_score, compute_ej_impact, SCORING_CONFIG
+from operator_tiers import tier_for_operator, opex_pct_for_operator, TIER_OPEX_PCT
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CONFIGURATION
@@ -37,7 +38,8 @@ VIGILENT_PARAMS = {
 DEFAULTS = {
     "baseline_pue": 1.55,       # Uptime Institute 2023 global average
     "load_growth_rate": 0.10,   # 10% — industry consensus estimate
-    "energy_pct_opex": 0.40,    # 40% — typical for large DCs (Gartner, McKinsey)
+    "energy_pct_opex": 0.40,    # 40% wholesale-colo midline (operator-tier override applied per-DC; see operator_tiers.py)
+    "capacity_factor": 0.70,    # 70% — Uptime Institute / IDC avg IT load utilization (downtime, maintenance, headroom, ramp)
 }
 
 # --- State / province commercial electricity rates ($/kWh) ---
@@ -207,10 +209,16 @@ def score_datacenter(row):
     else:
         estimated_inputs.append("electricity_price")
 
+    # --- Per-DC OPEX share by operator tier ---
+    operator_name = row.get("Operator", "").strip()
+    op_tier = tier_for_operator(operator_name)
+    energy_pct_opex = opex_pct_for_operator(operator_name)
+
     estimated_inputs.extend([
         "baseline_pue (industry avg 1.55)",
         "load_growth_rate (industry est 10%)",
-        "energy_pct_opex (industry est 40%)",
+        f"energy_pct_opex (operator-tier {op_tier}: {energy_pct_opex:.0%})",
+        f"capacity_factor (industry avg {DEFAULTS['capacity_factor']:.0%})",
     ])
 
     # --- Run composite scoring model ---
@@ -219,7 +227,8 @@ def score_datacenter(row):
         baseline_pue=DEFAULTS["baseline_pue"],
         electricity_price=elec_price,
         load_growth_rate=DEFAULTS["load_growth_rate"],
-        energy_pct_opex=DEFAULTS["energy_pct_opex"],
+        energy_pct_opex=energy_pct_opex,
+        capacity_factor=DEFAULTS["capacity_factor"],
         **VIGILENT_PARAMS,
     )
 
@@ -233,6 +242,7 @@ def score_datacenter(row):
             load_growth_rate=DEFAULTS["load_growth_rate"],
             energy_reduction_pct=VIGILENT_PARAMS["energy_reduction_pct"],
             zip_code=zip_code,
+            capacity_factor=DEFAULTS["capacity_factor"],
         )
 
     composite = score_result["composite_score"]
@@ -254,7 +264,9 @@ def score_datacenter(row):
         "electricity_price": elec_price,
         "baseline_pue": DEFAULTS["baseline_pue"],
         "load_growth_rate": DEFAULTS["load_growth_rate"],
-        "energy_pct_opex": DEFAULTS["energy_pct_opex"],
+        "energy_pct_opex": energy_pct_opex,
+        "capacity_factor": DEFAULTS["capacity_factor"],
+        "operator_tier": op_tier,
 
         # Composite scoring
         "composite_score": round(composite, 2),
@@ -269,7 +281,7 @@ def score_datacenter(row):
         # Data provenance
         "real_inputs": real_inputs,
         "estimated_inputs": estimated_inputs,
-        "missing_inputs_note": "baseline_pue, load_growth_rate, energy_pct_opex are estimated from industry averages",
+        "missing_inputs_note": "baseline_pue & load_growth_rate from industry averages; energy_pct_opex from operator-tier benchmark; capacity_factor from Uptime Institute / IDC avg",
     }
 
     # EJ impact
@@ -390,6 +402,9 @@ def write_enhanced_missing_inputs(results):
         growth_scores = {}
         opex_scores = {}
 
+        # Use this DC's operator-tier OPEX as the default for sensitivity sweeps
+        dc_default_opex = r.get("energy_pct_opex", DEFAULTS["energy_pct_opex"])
+
         for pue_val in [ranges["baseline_pue"]["low"], ranges["baseline_pue"]["high"]]:
             for growth_val in [ranges["load_growth_rate"]["low"], ranges["load_growth_rate"]["high"]]:
                 for opex_val in [ranges["energy_pct_opex"]["low"], ranges["energy_pct_opex"]["high"]]:
@@ -397,6 +412,7 @@ def write_enhanced_missing_inputs(results):
                         dc_size_mw=mw, baseline_pue=pue_val,
                         electricity_price=price, load_growth_rate=growth_val,
                         energy_pct_opex=opex_val,
+                        capacity_factor=DEFAULTS["capacity_factor"],
                         **VIGILENT_PARAMS,
                     )
                     scores_at_bounds.append(s["composite_score"])
@@ -413,7 +429,8 @@ def write_enhanced_missing_inputs(results):
                     "baseline_pue": DEFAULTS["baseline_pue"],
                     "electricity_price": price,
                     "load_growth_rate": DEFAULTS["load_growth_rate"],
-                    "energy_pct_opex": DEFAULTS["energy_pct_opex"],
+                    "energy_pct_opex": dc_default_opex,
+                    "capacity_factor": DEFAULTS["capacity_factor"],
                     **VIGILENT_PARAMS,
                 }
                 kwargs[param] = ranges[param][bound]
@@ -526,7 +543,10 @@ def main():
     print("  Estimated (industry averages):")
     print(f"    - Baseline PUE: {DEFAULTS['baseline_pue']} (Uptime Institute 2023)")
     print(f"    - Load Growth Rate: {DEFAULTS['load_growth_rate']*100:.0f}% (industry consensus)")
-    print(f"    - Energy % of OPEX: {DEFAULTS['energy_pct_opex']*100:.0f}% (Gartner/McKinsey)")
+    print(f"    - Capacity Factor: {DEFAULTS['capacity_factor']*100:.0f}% (Uptime Institute / IDC avg utilization)")
+    print(f"    - Energy % of OPEX (operator-tier benchmark):")
+    for tier, pct in TIER_OPEX_PCT.items():
+        print(f"        {tier:<15} {pct*100:.0f}%")
     print("  Vigilent parameters (standard offering):")
     print(f"    - Investment Cost: ${VIGILENT_PARAMS['investment_cost']:,.0f}")
     print(f"    - Energy Reduction: {VIGILENT_PARAMS['energy_reduction_pct']*100:.0f}%")

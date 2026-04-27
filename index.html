@@ -14,6 +14,37 @@
         <link rel="stylesheet" href="css/MarkerCluster.Default.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <style>
+        /* Collapsible map-overlay controls — header always visible, body hides when .collapsed */
+        .cc { transition: padding 0.12s; }
+        .cc .cc-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #1b285b;
+            user-select: none;
+            line-height: 1.2;
+        }
+        .cc .cc-chevron {
+            font-size: 10px;
+            color: #888;
+            transition: transform 0.15s;
+            font-family: monospace;
+        }
+        .cc.collapsed .cc-chevron { transform: rotate(-90deg); }
+        .cc .cc-body { margin-top: 8px; }
+        .cc.collapsed .cc-body { display: none; }
+        .cc.collapsed { padding: 8px 12px !important; }
+        /* Override default green-yellow-red cluster ramp with grayscale */
+        .marker-cluster-small      { background-color: rgba(220,220,220,0.60) !important; }
+        .marker-cluster-small  div { background-color: rgba(180,180,180,0.70) !important; color: #1b285b; }
+        .marker-cluster-medium     { background-color: rgba(170,170,170,0.60) !important; }
+        .marker-cluster-medium div { background-color: rgba(120,120,120,0.70) !important; color: #fff; }
+        .marker-cluster-large      { background-color: rgba(110,110,110,0.60) !important; }
+        .marker-cluster-large  div { background-color: rgba(60,60,60,0.75)   !important; color: #fff; }
         html, body { width: 100%; height: 100%; padding: 0; margin: 0;
                      font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
         #app { display: flex; height: 100vh; }
@@ -2151,21 +2182,18 @@
         }
 
         // Shared score-based marker style for all DC layers
-        function scoredMarkerStyle(feature, pane) {
-            var score = feature.properties['composite_score'];
-            var radius, fillColor, strokeColor, weight;
-            if (score == null) {
-                radius = 5; fillColor = 'rgba(150,150,150,0.8)'; strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
-            } else if (score >= 75) {
-                radius = 14; fillColor = 'rgba(37,172,1,0.9)'; strokeColor = 'rgba(20,100,0,1)'; weight = 2.5;
-            } else if (score >= 50) {
-                radius = 10; fillColor = 'rgba(16,117,232,0.85)'; strokeColor = 'rgba(10,91,191,1)'; weight = 2.0;
-            } else if (score >= 25) {
-                radius = 7; fillColor = 'rgba(136,180,242,0.85)'; strokeColor = 'rgba(61,128,53,1)'; weight = 1.5;
-            } else {
-                radius = 5; fillColor = 'rgba(215,231,248,0.85)'; strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
-            }
-            return { pane: pane, radius: radius, opacity: 1, color: strokeColor, dashArray: '', lineCap: 'round', lineJoin: 'round', weight: weight, fill: true, fillOpacity: 1, fillColor: fillColor, interactive: true };
+        // Uniform green-square icon used for every DC marker across all regions.
+        // (Score-based circle styling was removed per Adam's request; one icon to
+        // keep the map visually quiet and consistent.)
+        var greenSquareIcon = L.divIcon({
+            className: 'dc-square-icon',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+            popupAnchor: [0, -6],
+            html: '<div style="width:12px;height:12px;background:rgba(37,172,1,0.9);border:1.5px solid rgba(20,100,0,1);box-sizing:border-box;"></div>',
+        });
+        function dcMarker(feature, latlng) {
+            return L.marker(latlng, { icon: greenSquareIcon });
         }
 
         // ============================================================
@@ -2235,18 +2263,31 @@
                 };
             };
         }
-        function globalPopup(metricLabel, unitFmt) {
+        function globalPopup(activeMetric) {
+            // activeMetric: one of 'electricity' | 'water' | 'regulations' | 'composite'
+            // Bolds the matching row in the metric table; no duplicate top row.
             return function(feature, layer) {
                 var p = feature.properties;
+                function row(key, label, valStr) {
+                    var bold = (key === activeMetric);
+                    var open = bold ? '<b>' : '';
+                    var close = bold ? '</b>' : '';
+                    return '<tr><td>' + open + label + close + '</td>'
+                        + '<td style="text-align:right">' + open + valStr + close + '</td></tr>';
+                }
+                var elecStr = (p.electricity_rate_cents_per_kwh != null ? p.electricity_rate_cents_per_kwh.toFixed(2) + ' ¢/kWh' : 'N/A');
+                var waterStr = (p.water_rate_per_1000_gal != null ? '$' + p.water_rate_per_1000_gal.toFixed(2) + '/1k gal' : 'N/A');
+                var regsStr = (p.regulations_count != null ? p.regulations_count + ' statutes' : 'N/A');
+                var compStr = (p.global_composite != null ? p.global_composite.toFixed(1) + '/100' : 'N/A');
+
                 var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:220px;">';
                 html += '<div style="font-weight:700;color:#1b285b;font-size:14px;">' + (p.Name||'') + '</div>';
                 html += '<div style="color:#666;font-size:12px;margin-bottom:6px;">' + (p.Region||'') + '</div>';
                 html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
-                html += '<tr><td><b>' + metricLabel + '</b></td><td style="text-align:right">' + unitFmt(p.value) + '</td></tr>';
-                html += '<tr><td>Electricity</td><td style="text-align:right">' + (p.electricity_rate_cents_per_kwh != null ? p.electricity_rate_cents_per_kwh.toFixed(2) + ' ¢/kWh' : 'N/A') + '</td></tr>';
-                html += '<tr><td>Water</td><td style="text-align:right">' + (p.water_rate_per_1000_gal != null ? '$' + p.water_rate_per_1000_gal.toFixed(2) + '/1k gal' : 'N/A') + '</td></tr>';
-                html += '<tr><td>Regulations</td><td style="text-align:right">' + (p.regulations_count != null ? p.regulations_count : 'N/A') + '</td></tr>';
-                html += '<tr><td><b>Global Composite</b></td><td style="text-align:right"><b>' + (p.global_composite != null ? p.global_composite.toFixed(1) : 'N/A') + '/100</b></td></tr>';
+                html += row('electricity', 'Electricity', elecStr);
+                html += row('water',       'Water',       waterStr);
+                html += row('regulations', 'Regulations', regsStr);
+                html += row('composite',   'Global Composite', compStr);
                 html += '</table></div>';
                 layer.bindPopup(html, {maxHeight: 300});
             };
@@ -2260,22 +2301,22 @@
         var layer_GlobalElectricity = new L.geoJson(json_GlobalElectricity, {
             pane:'pane_GlobalElectricity',
             style: makeGlobalStyle('pane_GlobalElectricity', ELEC_BREAKS, ELEC_COLORS),
-            onEachFeature: globalPopup('Electricity', function(v){return v != null ? v.toFixed(2) + ' ¢/kWh' : 'N/A';}),
+            onEachFeature: globalPopup('electricity'),
         });
         var layer_GlobalWater = new L.geoJson(json_GlobalWater, {
             pane:'pane_GlobalWater',
             style: makeGlobalStyle('pane_GlobalWater', WATER_BREAKS, WATER_COLORS),
-            onEachFeature: globalPopup('Water', function(v){return v != null ? '$' + v.toFixed(2) + '/1k gal' : 'N/A';}),
+            onEachFeature: globalPopup('water'),
         });
         var layer_GlobalRegulations = new L.geoJson(json_GlobalRegulations, {
             pane:'pane_GlobalRegulations',
             style: makeGlobalStyle('pane_GlobalRegulations', REG_BREAKS, REG_COLORS),
-            onEachFeature: globalPopup('Regulations', function(v){return v != null ? v + ' statutes' : 'N/A';}),
+            onEachFeature: globalPopup('regulations'),
         });
         var layer_GlobalComposite = new L.geoJson(json_GlobalComposite, {
             pane:'pane_GlobalComposite',
             style: makeGlobalStyle('pane_GlobalComposite', COMP_BREAKS, COMP_COLORS),
-            onEachFeature: globalPopup('Composite', function(v){return v != null ? v.toFixed(1) + '/100' : 'N/A';}),
+            onEachFeature: globalPopup('composite'),
         });
         // Electricity is the default-on global layer (matches radio default)
         layer_GlobalElectricity.addTo(map);
@@ -2300,7 +2341,7 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseBrazil_19_0(feature));
+                return dcMarker(feature, latlng);
             },
         });
         var cluster_VigilentDataCenterDatabaseBrazil_19 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2326,7 +2367,7 @@
             pane: 'pane_VigilentDataCenterDatabaseOther_23',
             onEachFeature: pop_VigilentDataCenterDatabaseOther_23,
             pointToLayer: function (feature, latlng) {
-                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseOther_23_0(feature));
+                return dcMarker(feature, latlng);
             },
         });
         var cluster_VigilentDataCenterDatabaseOther_23 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2355,7 +2396,7 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseEurope_20_0(feature));
+                return dcMarker(feature, latlng);
             },
         });
         var cluster_VigilentDataCenterDatabaseEurope_20 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2384,7 +2425,7 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseCanada_21_0(feature));
+                return dcMarker(feature, latlng);
             },
         });
         var cluster_VigilentDataCenterDatabaseCanada_21 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2454,7 +2495,7 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, style_VigilentDataCenterDatabaseUS_22_0(feature));
+                return dcMarker(feature, latlng);
             },
         });
         var cluster_VigilentDataCenterDatabaseUS_22 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2464,22 +2505,57 @@
 
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseUS_22);
         cluster_VigilentDataCenterDatabaseUS_22.addTo(map);
-        // --- Vigilent Target Score Legend ---
+        // Helper — wrap a Leaflet control's div with a collapsible header.
+        // Returns the body element for the caller to populate / re-populate later.
+        function buildCollapsibleControl(div, title, options) {
+            var opts = options || {};
+            var startCollapsed = opts.startCollapsed !== false; // default = collapsed
+            div.classList.add('cc');
+            if (startCollapsed) div.classList.add('collapsed');
+            div.style.background = 'white';
+            div.style.padding = '10px 14px';
+            div.style.borderRadius = '8px';
+            div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            div.style.fontSize = '13px';
+            if (opts.maxWidth) div.style.width = opts.maxWidth;
+            var header = document.createElement('div');
+            header.className = 'cc-header';
+            header.innerHTML = '<span class="cc-title">' + title + '</span>'
+                            + '<span class="cc-chevron">▼</span>';
+            var body = document.createElement('div');
+            body.className = 'cc-body';
+            div.appendChild(header);
+            div.appendChild(body);
+            header.addEventListener('click', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                div.classList.toggle('collapsed');
+            });
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+            return body;
+        }
+
+        // --- Vigilent Target Score Legend --- (always visible, NOT collapsible)
         var vigilentLegend = L.control({position: 'bottomright'});
         vigilentLegend.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info legend');
             div.style.background = 'white';
-            div.style.padding = '12px 16px';
+            div.style.padding = '10px 14px';
             div.style.borderRadius = '8px';
             div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-            div.style.fontSize = '12px';
-            div.style.lineHeight = '1.8';
             div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
-            div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#1b285b;">Vigilent Target Score</div>';
-            div.innerHTML += '<div><svg width="30" height="30" style="vertical-align:middle;"><circle cx="15" cy="15" r="14" fill="rgba(37,172,1,0.9)" stroke="rgba(20,100,0,1)" stroke-width="2.5"/></svg> <span style="vertical-align:middle;">Excellent (75-100)</span></div>';
-            div.innerHTML += '<div><svg width="22" height="22" style="vertical-align:middle;"><circle cx="11" cy="11" r="10" fill="rgba(16,117,232,0.85)" stroke="rgba(10,91,191,1)" stroke-width="2"/></svg> <span style="vertical-align:middle;">Good (50-74)</span></div>';
-            div.innerHTML += '<div><svg width="16" height="16" style="vertical-align:middle;"><circle cx="8" cy="8" r="7" fill="rgba(136,180,242,0.85)" stroke="rgba(61,128,53,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Moderate (25-49)</span></div>';
-            div.innerHTML += '<div><svg width="12" height="12" style="vertical-align:middle;"><circle cx="6" cy="6" r="5" fill="rgba(150,150,150,0.8)" stroke="rgba(100,100,100,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Not Scored</span></div>';
+            div.style.fontSize = '12px';
+            div.style.lineHeight = '1.6';
+            // Uniform green-square key (matches the new dcMarker style)
+            div.innerHTML =
+                '<div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#1b285b;">Vigilent Target</div>'
+              + '<div style="display:flex; align-items:center; gap:8px;">'
+              + '<span style="display:inline-block; width:12px; height:12px; background:rgba(37,172,1,0.9); border:1.5px solid rgba(20,100,0,1);"></span>'
+              + '<span>Data Center</span>'
+              + '</div>';
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
             return div;
         };
         vigilentLegend.addTo(map);
@@ -2501,44 +2577,46 @@
         });
         var operatorList = Array.from(operators).sort();
 
+        // Selected operators (empty Set = "show all"). Multi-select for comparison.
+        var selectedOperators = new Set();
+
         var operatorFilter = L.control({position: 'topright'});
         operatorFilter.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info operator-filter');
-            div.style.background = 'white';
-            div.style.padding = '10px 14px';
-            div.style.borderRadius = '8px';
-            div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-            div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
-            div.style.fontSize = '13px';
-            div.style.maxHeight = '400px';
-            div.style.overflowY = 'auto';
-
-            var title = '<div style="font-weight:700; font-size:13px; margin-bottom:8px; color:#1b285b;">Filter by Operator</div>';
-            var select = '<select id="operator-select" style="width:100%; padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px; font-family:inherit;">';
-            select += '<option value="">All Operators (' + operatorList.length + ')</option>';
+            var body = buildCollapsibleControl(div, 'Filter by Operator', {maxWidth: '230px'});
+            var html = '<div style="font-size:11px; color:#888; margin-bottom:6px;">Select one or more to compare. Empty = show all.</div>';
+            html += '<input type="text" id="operator-search" placeholder="Search operators..." '
+                  + 'style="width:100%; padding:5px 7px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box; margin-bottom:6px;">';
+            html += '<div style="display:flex; gap:6px; margin-bottom:6px;">';
+            html += '<button id="operator-clear" style="flex:1; padding:4px 6px; border:1px solid #ccc; background:#f8f8f8; border-radius:4px; font-size:11px; cursor:pointer;">Clear</button>';
+            html += '<button id="operator-all" style="flex:1; padding:4px 6px; border:1px solid #ccc; background:#f8f8f8; border-radius:4px; font-size:11px; cursor:pointer;">Select All</button>';
+            html += '</div>';
+            html += '<div id="operator-list" style="max-height:260px; overflow-y:auto; border:1px solid #eee; border-radius:4px; padding:4px 6px;">';
             operatorList.forEach(function(op) {
-                select += '<option value="' + op + '">' + op + '</option>';
+                var safe = op.replace(/"/g, '&quot;');
+                html += '<label class="op-row" data-op="' + safe + '" style="display:block; padding:2px 0; font-size:12px; cursor:pointer; user-select:none;">';
+                html += '<input type="checkbox" value="' + safe + '" style="margin-right:6px; vertical-align:middle;">';
+                html += '<span>' + safe + '</span>';
+                html += '</label>';
             });
-            select += '</select>';
-            var countDiv = '<div id="operator-count" style="margin-top:6px; font-size:11px; color:#666;">Showing all data centers</div>';
-            div.innerHTML = title + select + countDiv;
-
-            // Prevent map interaction when clicking on the control
-            L.DomEvent.disableClickPropagation(div);
-            L.DomEvent.disableScrollPropagation(div);
+            html += '</div>';
+            html += '<div id="operator-count" style="margin-top:6px; font-size:11px; color:#666;">Showing all data centers</div>';
+            body.innerHTML = html;
             return div;
         };
         operatorFilter.addTo(map);
 
-        // Filter function
-        function filterByOperator(selectedOp) {
+        // --- Filter logic ---
+        function filterByOperators() {
+            var sel = selectedOperators;
+            var matchAll = (sel.size === 0);
             var shown = 0, total = 0;
             allDcLayers.forEach(function(item) {
                 item.cluster.clearLayers();
                 item.geoLayer.eachLayer(function(layer) {
                     total++;
                     var op = layer.feature.properties['Operator'] || layer.feature.properties['operator'] || '';
-                    if (!selectedOp || op === selectedOp) {
+                    if (matchAll || sel.has(op)) {
                         item.cluster.addLayer(layer);
                         shown++;
                     }
@@ -2546,20 +2624,60 @@
             });
             var countEl = document.getElementById('operator-count');
             if (countEl) {
-                if (!selectedOp) {
+                if (matchAll) {
                     countEl.textContent = 'Showing all ' + total + ' data centers';
                 } else {
-                    countEl.textContent = 'Showing ' + shown + ' of ' + total + ' data centers';
+                    countEl.textContent = 'Showing ' + shown + ' of ' + total +
+                        ' (' + sel.size + ' operator' + (sel.size === 1 ? '' : 's') + ')';
                 }
             }
         }
 
-        // Attach event listener after DOM ready
+        // --- Wire up controls after DOM ready ---
         setTimeout(function() {
-            var sel = document.getElementById('operator-select');
-            if (sel) {
-                sel.addEventListener('change', function() {
-                    filterByOperator(this.value);
+            // Checkbox toggle handlers
+            document.querySelectorAll('#operator-list input[type="checkbox"]').forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    if (cb.checked) selectedOperators.add(cb.value);
+                    else selectedOperators.delete(cb.value);
+                    filterByOperators();
+                });
+            });
+            // Search box
+            var searchEl = document.getElementById('operator-search');
+            if (searchEl) {
+                searchEl.addEventListener('input', function() {
+                    var q = (this.value || '').trim().toLowerCase();
+                    document.querySelectorAll('#operator-list .op-row').forEach(function(row) {
+                        var op = (row.getAttribute('data-op') || '').toLowerCase();
+                        row.style.display = (!q || op.indexOf(q) >= 0) ? 'block' : 'none';
+                    });
+                });
+            }
+            // Clear button
+            var clearBtn = document.getElementById('operator-clear');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    selectedOperators.clear();
+                    document.querySelectorAll('#operator-list input[type="checkbox"]').forEach(function(cb) {
+                        cb.checked = false;
+                    });
+                    filterByOperators();
+                });
+            }
+            // Select All button (selects only currently visible — respects search)
+            var allBtn = document.getElementById('operator-all');
+            if (allBtn) {
+                allBtn.addEventListener('click', function() {
+                    document.querySelectorAll('#operator-list .op-row').forEach(function(row) {
+                        if (row.style.display === 'none') return;
+                        var cb = row.querySelector('input[type="checkbox"]');
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            selectedOperators.add(cb.value);
+                        }
+                    });
+                    filterByOperators();
                 });
             }
         }, 100);
@@ -2570,10 +2688,9 @@
             {label: '<img src="legend/VigilentDataCenterDatabaseEurope_20.png" /> Vigilent Data Center Database (Europe)', layer: cluster_VigilentDataCenterDatabaseEurope_20},
             {label: '<img src="legend/VigilentDataCenterDatabaseBrazil_19.png" /> Vigilent Data Center Database (Brazil)', layer: cluster_VigilentDataCenterDatabaseBrazil_19},
             {label: '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(186,85,211,1);border:2px solid rgba(128,0,128,1);margin-right:4px;vertical-align:middle;"></span> Vigilent Data Center Database (Other)', layer: cluster_VigilentDataCenterDatabaseOther_23},
-        {label: '<b>Global Electricity</b> (¢/kWh)', layer: layer_GlobalElectricity},
-        {label: '<b>Global Water</b> ($/1000 gal)', layer: layer_GlobalWater},
-        {label: '<b>Global Regulations</b> (count)', layer: layer_GlobalRegulations},
-        {label: '<b>Global Composite</b> (0-100)', layer: layer_GlobalComposite},
+        // Global metric layers intentionally NOT in the layer tree — they're
+        // controlled exclusively by the Active Metric radio (bottom-left)
+        // so users can't accidentally select multiple metrics at once.
         // Legacy per-region layers — kept loaded in memory but hidden from the
         // layer tree so the global gradients display cleanly.
         /*
@@ -2599,9 +2716,9 @@
             {label: 'Brazil<br /><table><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_0330.png" /></td><td>0 - 33</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_33671.png" /></td><td>33 - 67</td></tr><tr><td style="text-align: center;"><img src="legend/BrazilCompositeScore_1_671002.png" /></td><td>67 - 100</td></tr></table>', layer: layer_BrazilCompositeScore_1},]},
         ]
         */
-        ,
-            // Canada and Brazil outlines always visible (not toggleable)
-            {label: '<img src="legend/WorldMap_0.png" /> World Map', layer: layer_WorldMap_0},]
+        ]
+            // World Map is always rendered (added at init via map.addLayer above);
+            // intentionally NOT in the overlaysTree so it's not toggleable.
         var lay = L.control.layers.tree(null, overlaysTree,{
             //namedToggle: true,
             //selectorBack: false,
@@ -2609,7 +2726,7 @@
             //openedSymbol: '&#8863; &#x1f5c1;',
             //collapseAll: 'Collapse all',
             //expandAll: 'Expand all',
-            collapsed: false, 
+            collapsed: true,
         });
         lay.addTo(map);
         // --- Mutually Exclusive Metric Groups ---
@@ -2682,7 +2799,7 @@
             _mutexActive = false;
         });
 
-        // --- Radio Button Control ---
+        // --- Radio Button Control --- (always visible, NOT collapsible per user request)
         var metricRadio = L.control({position: 'bottomleft'});
         metricRadio.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info metric-radio-control');
@@ -2714,6 +2831,71 @@
             return div;
         };
         metricRadio.addTo(map);
+
+        // ─────────────────────────────────────────────────────────────────
+        // Dynamic Legend — swaps bins/colors when active metric changes
+        // ─────────────────────────────────────────────────────────────────
+        var metricLegendSpec = {
+            electricity: { label: 'Electricity (¢/kWh)', breaks: ELEC_BREAKS, colors: ELEC_COLORS, fmt: function(v){return v.toFixed(1);} },
+            water:       { label: 'Water ($/1000 gal)',  breaks: WATER_BREAKS, colors: WATER_COLORS, fmt: function(v){return '$' + v.toFixed(1);} },
+            regulations: { label: 'Regulations (count)', breaks: REG_BREAKS, colors: REG_COLORS, fmt: function(v){return v.toFixed(0);} },
+            composite:   { label: 'Composite (0-100)',   breaks: COMP_BREAKS, colors: COMP_COLORS, fmt: function(v){return v.toFixed(0);} },
+        };
+        var metricLegend = L.control({position: 'bottomright'});
+        metricLegend.onAdd = function() {
+            var div = L.DomUtil.create('div', 'info metric-legend-control');
+            // Use the collapsible wrapper; body is populated by renderLegend()
+            buildCollapsibleControl(div, 'Legend', {maxWidth: '180px'});
+            return div;
+        };
+        metricLegend.addTo(map);
+
+        function renderLegend(metric) {
+            // Match _ramp(): bin i covers (breaks[i-1], breaks[i]]; arrays
+            // have equal length; last color also catches values > max break.
+            var spec = metricLegendSpec[metric];
+            if (!spec) return;
+            var ctrl = document.querySelector('.metric-legend-control');
+            if (!ctrl) return;
+            var titleEl = ctrl.querySelector('.cc-title');
+            var body = ctrl.querySelector('.cc-body');
+            if (titleEl) titleEl.textContent = 'Legend — ' + spec.label;
+            if (!body) return;
+            var html = '';
+            for (var i = 0; i < spec.colors.length; i++) {
+                var lo = i === 0 ? null : spec.breaks[i-1];
+                var hi = spec.breaks[i];
+                var rangeText;
+                if (metric === 'regulations') {
+                    if (i === 0) rangeText = '0';
+                    else if (i === spec.colors.length - 1) rangeText = (spec.breaks[i-1] + 1) + '+';
+                    else rangeText = String(spec.breaks[i]);
+                } else if (lo === null) {
+                    rangeText = '≤ ' + spec.fmt(hi);
+                } else {
+                    rangeText = spec.fmt(lo) + ' – ' + spec.fmt(hi);
+                }
+                html += '<div style="display:flex;align-items:center;margin:3px 0;font-size:12px;">';
+                html += '<span style="display:inline-block;width:22px;height:14px;background:' + spec.colors[i] + ';border:1px solid #999;margin-right:8px;"></span>';
+                html += '<span>' + rangeText + '</span>';
+                html += '</div>';
+            }
+            html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #eee;font-size:10px;color:#888;line-height:1.3;">Bins shared across all regions<br>for cross-comparison.</div>';
+            body.innerHTML = html;
+        }
+        // Render initial legend (matches default electricity layer)
+        renderLegend('electricity');
+        // Re-render whenever active metric switches
+        var _origSwitchMetricGroup = switchMetricGroup;
+        switchMetricGroup = function(groupName) {
+            _origSwitchMetricGroup(groupName);
+            renderLegend(groupName);
+        };
+        // Also catch radio toggle -> overlayadd path
+        map.on('overlayadd', function(e) {
+            var g = layerToGroup[L.stamp(e.layer)];
+            if (g) renderLegend(g);
+        });
 
 		document.addEventListener("DOMContentLoaded", function() {
             // set new Layers List height which considers toggle icon

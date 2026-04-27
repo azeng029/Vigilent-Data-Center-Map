@@ -1,0 +1,39 @@
+state,city,power_inr_per_kwh,power_cents_per_kwh,water_inr_per_kl,water_usd_per_1000gal,water_proxy,dc_count,reg_score_5,composite_0_100,e_sub,w_sub,d_sub,r_sub,polygon_matched
+"Maharashtra","Mumbai",10.27380178,12.3,31.5,1.43,"",89.0,5,65.44,27.6,72.0,100,100,Y
+"Andhra Pradesh","Visakhapatnam",7.811364669,9.35,None,1.63,"Proxy: Greater Visakhapatnam Mun Corp commercial tariff 2024",3.0,5,55.46,53.7,66.6,3.4,100,Y
+"Haryana","Gurgaon / Faridabad",6.682924547,8.0,20.0,0.91,"",8.0,2,53.27,65.6,86.1,9.0,40,Y
+"Uttar Pradesh","Noida / Lucknow",7.983565708,9.56,31.5,1.43,"",21.0,3,51.85,51.8,72.0,23.6,60,Y
+"Madhya Pradesh","Indore",7.707058201,9.23,8.82,0.4,"",4.0,2,50.79,54.7,100,4.5,40,Y
+"Kerala","Cochin / Alappuzha",6.8,8.14,60.5,2.74,"",7.0,4,50.6,64.4,36.4,7.9,80,Y
+"Punjab","Ludhiana",7.547485965,9.04,None,1.45,"Proxy: Punjab MC commercial water cess + base tariff (Ludhiana 2024)",3.0,3,49.53,56.4,71.5,3.4,60,Y
+"Telangana","Hyderabad",8.754771796,10.48,52.5,2.38,"",29.0,4,49.23,43.7,46.2,32.6,80,Y
+"Karnataka","Bengaluru",9.627676171,11.53,65,2.95,"",31.0,5,46.87,34.4,30.7,34.8,100,Y
+"Chhattisgarh","Raipur",7.43991621,8.91,None,1.27,"Proxy: Raipur Mun Corp commercial slab (above 20 KL/month)",2.0,2,46.75,57.6,76.4,2.2,40,Y
+"Arunachal Pradesh","",3.432184751,4.11,None,None,"",0.0,1,44.0,100,0,0,20,Y
+"Jammu and Kashmir","",3.691803421,4.42,None,None,"",0.0,1,42.9,97.3,0,0,20,Y
+"West Bengal","Kolkata",7.067724806,8.46,41.5,1.88,"",10.0,1,42.82,61.5,59.8,11.2,20,Y
+"Tamil Nadu","Chennai",11.67805934,13.99,38.5,1.75,"",39.0,4,42.48,12.6,63.3,43.8,80,Y
+"Puducherry","Pondicherry",7.361706635,8.82,None,1.36,"Proxy: Puducherry Public Works Dept commercial tariff",1.0,1,42.35,58.4,73.9,1.1,20,Y
+"Rajasthan","Jaipur",8.583534844,10.28,54.1,2.45,"",6.0,3,40.39,45.4,44.3,6.7,60,Y
+"Dadra and Nagar Haveli","",4.35,5.21,None,None,"",0.0,1,40.11,90.3,0,0,20,Y
+"Daman and Diu","",4.35,5.21,None,None,"",0.0,1,40.11,90.3,0,0,20,N
+"Gujarat","Ahmedabad",8.185514823,9.8,37.5,1.7,"",11.0,1,39.28,49.7,64.7,12.4,20,Y
+"Tripura","Agartala",9.797877716,11.73,None,1.0,"Proxy: Agartala Municipal Corp commercial slab (~22 INR/KL above 30 KL)",1.0,2,38.01,32.6,83.7,1.1,40,Y
+"Ladakh","",4.858757062,5.82,None,None,"",0.0,1,37.95,84.9,0,0,20,Y
+"Chandigarh","",5.881595364,7.04,None,None,"",0.0,2,37.64,74.1,0,0,40,Y
+"Odisha","",6.883429989,8.24,None,None,"",0.0,3,37.39,63.5,0,0,60,Y
+"Goa","",5.996290844,7.18,None,None,"",0.0,2,37.14,72.9,0,0,40,Y
+"Dadra and Nagar Haveli and Daman and Diu","",5.987223242,7.17,None,None,"",0.0,1,33.18,72.9,0,0,20,Y
+"Meghalaya","",7.106973066,8.51,None,None,"",0.0,2,32.44,61.1,0,0,40,Y
+"Himachal Pradesh","",6.84200402,8.19,None,None,"",0.0,1,29.57,63.9,0,0,20,Y
+"Assam","",10.007307,11.98,None,None,"",0.0,4,28.17,30.4,0,0,80,Y
+"Nagaland","",7.174295775,8.59,None,None,"",0.0,1,28.16,60.4,0,0,20,Y
+"Jharkhand","",8.294147963,9.93,None,None,"",0.0,2,27.42,48.5,0,0,40,Y
+"Uttarakhand","",7.689308203,9.21,None,None,"",0.0,1,25.96,54.9,0,0,20,Y
+"Bihar","Patna",12.87382814,15.42,28.5,1.29,"",1.0,2,23.39,0,75.8,1.1,40,Y
+"Delhi","New Delhi",9.604480637,11.5,90,4.08,"",13.0,1,20.79,34.7,0,14.6,20,Y
+"Manipur","",9.320932317,11.16,None,None,"",0.0,1,19.07,37.7,0,0,20,Y
+"Sikkim","",10.64062823,12.74,None,None,"",0.0,1,13.48,23.7,0,0,20,Y
+"Mizoram","",10.87221095,13.02,None,None,"",0.0,1,12.49,21.2,0,0,20,Y
+"Lakshadweep","",11.42857143,13.69,None,None,"",0.0,1,10.12,15.3,0,0,20,Y
+"Andaman and Nicobar Islands","",12.59323504,15.08,None,None,"",0.0,1,5.2,3.0,0,0,20,Y
