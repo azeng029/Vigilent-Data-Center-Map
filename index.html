@@ -2181,19 +2181,31 @@
             layer.bindPopup(html, { maxHeight: 400, maxWidth: 340 });
         }
 
-        // Shared score-based marker style for all DC layers
-        // Uniform green-square icon used for every DC marker across all regions.
-        // (Score-based circle styling was removed per Adam's request; one icon to
-        // keep the map visually quiet and consistent.)
-        var greenSquareIcon = L.divIcon({
-            className: 'dc-square-icon',
-            iconSize: [12, 12],
-            iconAnchor: [6, 6],
-            popupAnchor: [0, -6],
-            html: '<div style="width:12px;height:12px;background:rgba(37,172,1,0.9);border:1.5px solid rgba(20,100,0,1);box-sizing:border-box;"></div>',
-        });
-        function dcMarker(feature, latlng) {
-            return L.marker(latlng, { icon: greenSquareIcon });
+        // Shared score-based marker style for all DC layers — circle radius and
+        // green→blue gradient ramp keyed off the DC's composite_score so high
+        // scorers stand out visually when clusters spiderfy.
+        function scoredMarkerStyle(feature, pane) {
+            var score = feature.properties['composite_score'];
+            var radius, fillColor, strokeColor, weight;
+            if (score == null) {
+                radius = 5; fillColor = 'rgba(150,150,150,0.8)'; strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
+            } else if (score >= 75) {
+                radius = 14; fillColor = 'rgba(37,172,1,0.9)';   strokeColor = 'rgba(20,100,0,1)';  weight = 2.5;
+            } else if (score >= 50) {
+                radius = 10; fillColor = 'rgba(16,117,232,0.85)';strokeColor = 'rgba(10,91,191,1)'; weight = 2.0;
+            } else if (score >= 25) {
+                radius = 7;  fillColor = 'rgba(136,180,242,0.85)';strokeColor = 'rgba(61,128,53,1)'; weight = 1.5;
+            } else {
+                radius = 5;  fillColor = 'rgba(215,231,248,0.85)';strokeColor = 'rgba(100,100,100,1)'; weight = 1.5;
+            }
+            return {
+                pane: pane, radius: radius, opacity: 1, color: strokeColor,
+                dashArray: '', lineCap: 'round', lineJoin: 'round', weight: weight,
+                fill: true, fillOpacity: 1, fillColor: fillColor, interactive: true,
+            };
+        }
+        function dcMarker(feature, latlng, pane) {
+            return L.circleMarker(latlng, scoredMarkerStyle(feature, pane));
         }
 
         // ============================================================
@@ -2322,10 +2334,6 @@
         layer_GlobalElectricity.addTo(map);
 
         function pop_VigilentDataCenterDatabaseBrazil_19(feature, layer) { buildDcPopup(feature, layer); }
-
-        function style_VigilentDataCenterDatabaseBrazil_19_0(feature) {
-            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseBrazil_19');
-        }
         map.createPane('pane_VigilentDataCenterDatabaseBrazil_19');
         map.getPane('pane_VigilentDataCenterDatabaseBrazil_19').style.zIndex = 419;
         map.getPane('pane_VigilentDataCenterDatabaseBrazil_19').style['mix-blend-mode'] = 'normal';
@@ -2337,11 +2345,7 @@
             pane: 'pane_VigilentDataCenterDatabaseBrazil_19',
             onEachFeature: pop_VigilentDataCenterDatabaseBrazil_19,
             pointToLayer: function (feature, latlng) {
-                var context = {
-                    feature: feature,
-                    variables: {}
-                };
-                return dcMarker(feature, latlng);
+                return dcMarker(feature, latlng, 'pane_VigilentDataCenterDatabaseBrazil_19');
             },
         });
         var cluster_VigilentDataCenterDatabaseBrazil_19 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2353,9 +2357,6 @@
 
         // --- Other Regions (India, Singapore, Thailand) ---
         function pop_VigilentDataCenterDatabaseOther_23(feature, layer) { buildDcPopup(feature, layer); }
-        function style_VigilentDataCenterDatabaseOther_23_0(feature) {
-            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseOther_23');
-        }
         map.createPane('pane_VigilentDataCenterDatabaseOther_23');
         map.getPane('pane_VigilentDataCenterDatabaseOther_23').style.zIndex = 423;
         map.getPane('pane_VigilentDataCenterDatabaseOther_23').style['mix-blend-mode'] = 'normal';
@@ -2367,7 +2368,7 @@
             pane: 'pane_VigilentDataCenterDatabaseOther_23',
             onEachFeature: pop_VigilentDataCenterDatabaseOther_23,
             pointToLayer: function (feature, latlng) {
-                return dcMarker(feature, latlng);
+                return dcMarker(feature, latlng, 'pane_VigilentDataCenterDatabaseOther_23');
             },
         });
         var cluster_VigilentDataCenterDatabaseOther_23 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2377,10 +2378,6 @@
         cluster_VigilentDataCenterDatabaseOther_23.addTo(map);
 
         function pop_VigilentDataCenterDatabaseEurope_20(feature, layer) { buildDcPopup(feature, layer); }
-
-        function style_VigilentDataCenterDatabaseEurope_20_0(feature) {
-            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseEurope_20');
-        }
         map.createPane('pane_VigilentDataCenterDatabaseEurope_20');
         map.getPane('pane_VigilentDataCenterDatabaseEurope_20').style.zIndex = 420;
         map.getPane('pane_VigilentDataCenterDatabaseEurope_20').style['mix-blend-mode'] = 'normal';
@@ -2392,11 +2389,7 @@
             pane: 'pane_VigilentDataCenterDatabaseEurope_20',
             onEachFeature: pop_VigilentDataCenterDatabaseEurope_20,
             pointToLayer: function (feature, latlng) {
-                var context = {
-                    feature: feature,
-                    variables: {}
-                };
-                return dcMarker(feature, latlng);
+                return dcMarker(feature, latlng, 'pane_VigilentDataCenterDatabaseEurope_20');
             },
         });
         var cluster_VigilentDataCenterDatabaseEurope_20 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2406,10 +2399,6 @@
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseEurope_20);
         cluster_VigilentDataCenterDatabaseEurope_20.addTo(map);
         function pop_VigilentDataCenterDatabaseCanada_21(feature, layer) { buildDcPopup(feature, layer); }
-
-        function style_VigilentDataCenterDatabaseCanada_21_0(feature) {
-            return scoredMarkerStyle(feature, 'pane_VigilentDataCenterDatabaseCanada_21');
-        }
         map.createPane('pane_VigilentDataCenterDatabaseCanada_21');
         map.getPane('pane_VigilentDataCenterDatabaseCanada_21').style.zIndex = 421;
         map.getPane('pane_VigilentDataCenterDatabaseCanada_21').style['mix-blend-mode'] = 'normal';
@@ -2421,11 +2410,7 @@
             pane: 'pane_VigilentDataCenterDatabaseCanada_21',
             onEachFeature: pop_VigilentDataCenterDatabaseCanada_21,
             pointToLayer: function (feature, latlng) {
-                var context = {
-                    feature: feature,
-                    variables: {}
-                };
-                return dcMarker(feature, latlng);
+                return dcMarker(feature, latlng, 'pane_VigilentDataCenterDatabaseCanada_21');
             },
         });
         var cluster_VigilentDataCenterDatabaseCanada_21 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2435,51 +2420,6 @@
         bounds_group.addLayer(layer_VigilentDataCenterDatabaseCanada_21);
         cluster_VigilentDataCenterDatabaseCanada_21.addTo(map);
         function pop_VigilentDataCenterDatabaseUS_22(feature, layer) { buildDcPopup(feature, layer); }
-
-        function style_VigilentDataCenterDatabaseUS_22_0(feature) {
-            var score = feature.properties['composite_score'];
-            var radius, fillColor, strokeColor, weight;
-            if (score == null) {
-                radius = 5;
-                fillColor = 'rgba(150,150,150,0.8)';
-                strokeColor = 'rgba(100,100,100,1)';
-                weight = 1.5;
-            } else if (score >= 75) {
-                radius = 14;
-                fillColor = 'rgba(37,172,1,0.9)';
-                strokeColor = 'rgba(20,100,0,1)';
-                weight = 2.5;
-            } else if (score >= 50) {
-                radius = 10;
-                fillColor = 'rgba(16,117,232,0.85)';
-                strokeColor = 'rgba(10,91,191,1)';
-                weight = 2.0;
-            } else if (score >= 25) {
-                radius = 7;
-                fillColor = 'rgba(136,180,242,0.85)';
-                strokeColor = 'rgba(61,128,53,1)';
-                weight = 1.5;
-            } else {
-                radius = 5;
-                fillColor = 'rgba(215,231,248,0.85)';
-                strokeColor = 'rgba(100,100,100,1)';
-                weight = 1.5;
-            }
-            return {
-                pane: 'pane_VigilentDataCenterDatabaseUS_22',
-                radius: radius,
-                opacity: 1,
-                color: strokeColor,
-                dashArray: '',
-                lineCap: 'round',
-                lineJoin: 'round',
-                weight: weight,
-                fill: true,
-                fillOpacity: 1,
-                fillColor: fillColor,
-                interactive: true,
-            }
-        }
         map.createPane('pane_VigilentDataCenterDatabaseUS_22');
         map.getPane('pane_VigilentDataCenterDatabaseUS_22').style.zIndex = 422;
         map.getPane('pane_VigilentDataCenterDatabaseUS_22').style['mix-blend-mode'] = 'normal';
@@ -2491,11 +2431,7 @@
             pane: 'pane_VigilentDataCenterDatabaseUS_22',
             onEachFeature: pop_VigilentDataCenterDatabaseUS_22,
             pointToLayer: function (feature, latlng) {
-                var context = {
-                    feature: feature,
-                    variables: {}
-                };
-                return dcMarker(feature, latlng);
+                return dcMarker(feature, latlng, 'pane_VigilentDataCenterDatabaseUS_22');
             },
         });
         var cluster_VigilentDataCenterDatabaseUS_22 = new L.MarkerClusterGroup({showCoverageOnHover: false,
@@ -2547,13 +2483,12 @@
             div.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
             div.style.fontSize = '12px';
             div.style.lineHeight = '1.6';
-            // Uniform green-square key (matches the new dcMarker style)
-            div.innerHTML =
-                '<div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#1b285b;">Vigilent Target</div>'
-              + '<div style="display:flex; align-items:center; gap:8px;">'
-              + '<span style="display:inline-block; width:12px; height:12px; background:rgba(37,172,1,0.9); border:1.5px solid rgba(20,100,0,1);"></span>'
-              + '<span>Data Center</span>'
-              + '</div>';
+            // 4-tier score-graded key (matches scoredMarkerStyle output)
+            div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:6px; color:#1b285b;">Vigilent Target Score</div>'
+              + '<div><svg width="30" height="30" style="vertical-align:middle;"><circle cx="15" cy="15" r="14" fill="rgba(37,172,1,0.9)" stroke="rgba(20,100,0,1)" stroke-width="2.5"/></svg> <span style="vertical-align:middle;">Excellent (75-100)</span></div>'
+              + '<div><svg width="22" height="22" style="vertical-align:middle;"><circle cx="11" cy="11" r="10" fill="rgba(16,117,232,0.85)" stroke="rgba(10,91,191,1)" stroke-width="2"/></svg> <span style="vertical-align:middle;">Good (50-74)</span></div>'
+              + '<div><svg width="16" height="16" style="vertical-align:middle;"><circle cx="8" cy="8" r="7" fill="rgba(136,180,242,0.85)" stroke="rgba(61,128,53,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Moderate (25-49)</span></div>'
+              + '<div><svg width="12" height="12" style="vertical-align:middle;"><circle cx="6" cy="6" r="5" fill="rgba(150,150,150,0.8)" stroke="rgba(100,100,100,1)" stroke-width="1.5"/></svg> <span style="vertical-align:middle;">Not Scored</span></div>';
             L.DomEvent.disableClickPropagation(div);
             L.DomEvent.disableScrollPropagation(div);
             return div;
@@ -2682,12 +2617,16 @@
             }
         }, 100);
 
+        // Uniform green-square legend swatch for every DC layer in the tree.
+        // (The on-map markers are score-graded; this swatch only identifies
+        // the layer category, so all five entries share one icon.)
+        var DC_TREE_ICON = '<span style="display:inline-block;width:12px;height:12px;background:rgba(37,172,1,0.9);border:1.5px solid rgba(20,100,0,1);margin-right:6px;vertical-align:middle;"></span>';
         var overlaysTree = [
-            {label: '<img src="legend/VigilentDataCenterDatabaseUS_22.png" /> Vigilent Data Center Database (US)', layer: cluster_VigilentDataCenterDatabaseUS_22},
-            {label: '<img src="legend/VigilentDataCenterDatabaseCanada_21.png" /> Vigilent Data Center Database (Canada)', layer: cluster_VigilentDataCenterDatabaseCanada_21},
-            {label: '<img src="legend/VigilentDataCenterDatabaseEurope_20.png" /> Vigilent Data Center Database (Europe)', layer: cluster_VigilentDataCenterDatabaseEurope_20},
-            {label: '<img src="legend/VigilentDataCenterDatabaseBrazil_19.png" /> Vigilent Data Center Database (Brazil)', layer: cluster_VigilentDataCenterDatabaseBrazil_19},
-            {label: '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(186,85,211,1);border:2px solid rgba(128,0,128,1);margin-right:4px;vertical-align:middle;"></span> Vigilent Data Center Database (Other)', layer: cluster_VigilentDataCenterDatabaseOther_23},
+            {label: DC_TREE_ICON + 'Vigilent Data Center Database (US)', layer: cluster_VigilentDataCenterDatabaseUS_22},
+            {label: DC_TREE_ICON + 'Vigilent Data Center Database (Canada)', layer: cluster_VigilentDataCenterDatabaseCanada_21},
+            {label: DC_TREE_ICON + 'Vigilent Data Center Database (Europe)', layer: cluster_VigilentDataCenterDatabaseEurope_20},
+            {label: DC_TREE_ICON + 'Vigilent Data Center Database (Brazil)', layer: cluster_VigilentDataCenterDatabaseBrazil_19},
+            {label: DC_TREE_ICON + 'Vigilent Data Center Database (Other)', layer: cluster_VigilentDataCenterDatabaseOther_23},
         // Global metric layers intentionally NOT in the layer tree — they're
         // controlled exclusively by the Active Metric radio (bottom-left)
         // so users can't accidentally select multiple metrics at once.
