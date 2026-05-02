@@ -108,6 +108,10 @@
                 <button id="sidebar-toggle" title="Collapse sidebar" aria-label="Collapse sidebar">&#9664;</button>
                 <div id="sidebar-header">
                     <h2>Rank Data Centers</h2>
+                    <input id="sb-search" type="search" placeholder="Search name, city, operator…"
+                           autocomplete="off" spellcheck="false"
+                           style="width:100%;box-sizing:border-box;padding:6px 8px;margin-bottom:6px;
+                                  border:1px solid #ccc;border-radius:4px;font-size:12px;background:#fff;">
                     <div class="controls">
                         <select id="sb-var">
                             <option value="composite_score">Vigilent Composite Score</option>
@@ -207,15 +211,41 @@
         streetsBasemap.addTo(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-        // remove popup's row if "visible-with-data"
+        // remove popup's row if "visible-with-data" + format regulation cells
+        // as count + bullet list (so state/province popups match the DC popup
+        // treatment instead of dumping a single newline-mangled string).
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
          tempDiv.innerHTML = content;
+
+         // Format any regulation cell (id contains "Regulations") into a
+         // bulleted list. Read the raw property value rather than the rendered
+         // textContent so we keep the original \n separators.
+         var cells = tempDiv.querySelectorAll('td[id]');
+         for (var c = 0; c < cells.length; c++) {
+             var td = cells[c];
+             if (!/Regulations/i.test(td.id)) continue;
+             var raw = feature.properties[td.id];
+             if (raw == null || raw === '') continue;
+             var items = String(raw).split('\n')
+                 .map(function(s){ return s.trim(); })
+                 .filter(Boolean);
+             if (items.length === 0) continue;
+             var html = '<div style="font-weight:600;margin-bottom:3px;">'
+                 + items.length + ' active</div>';
+             html += '<ul style="margin:2px 0 2px 16px;padding:0;font-weight:normal;color:#444;">';
+             for (var j = 0; j < items.length; j++) {
+                 html += '<li style="margin:1px 0;">' + autolinker.link(items[j]) + '</li>';
+             }
+             html += '</ul>';
+             td.innerHTML = html;
+         }
+
          var rows = tempDiv.querySelectorAll('tr');
          for (var i = 0; i < rows.length; i++) {
-             var td = rows[i].querySelector('td.visible-with-data');
-             var key = td ? td.id : '';
-             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+             var td2 = rows[i].querySelector('td.visible-with-data');
+             var key = td2 ? td2.id : '';
+             if (td2 && td2.classList.contains('visible-with-data') && feature.properties[key] == null) {
                  rows[i].parentNode.removeChild(rows[i]);
              }
          }
@@ -309,18 +339,18 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_WorldMap_0_0() {
             return {
                 pane: 'pane_WorldMap_0',
-                opacity: 0.55,
-                color: 'rgba(70,70,70,0.55)',
+                opacity: 1,
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'round',
                 lineJoin: 'round',
-                weight: 0.6,
+                weight: 0.5,
                 fillOpacity: 0,
                 interactive: false,
             }
@@ -365,7 +395,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_BrazilCompositeScore_1_0(feature) {
@@ -452,7 +482,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_BrazilRegulationsByQuantity_2_0(feature) {
@@ -541,7 +571,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_BrazilCommercialElectricityRateskWh_3_0(feature) {
@@ -655,7 +685,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_BrazilCommercialWaterRates1000gallons_4_0(feature) {
@@ -767,18 +797,18 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_BrazilOutlineMap_5_0() {
             return {
                 pane: 'pane_BrazilOutlineMap_5',
                 opacity: 1,
-                color: 'rgba(35,35,35,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fillOpacity: 0,
                 interactive: false,
             }
@@ -796,7 +826,12 @@
             style: style_BrazilOutlineMap_5_0,
         });
         bounds_group.addLayer(layer_BrazilOutlineMap_5);
-        map.addLayer(layer_BrazilOutlineMap_5);
+        // BrazilOutlineMap intentionally NOT auto-added — its pane z-index
+        // (405) overlaps with the global metric layers and the GlobalElectricity
+        // layer already strokes Brazilian state borders, so adding both at init
+        // produced a "double stroke" effect that made Brazil look different
+        // from the rest of the world.
+        // map.addLayer(layer_BrazilOutlineMap_5);
         function pop_CanadaCompositeScore_6(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -823,7 +858,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_CanadaCompositeScore_6_0(feature) {
@@ -910,7 +945,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_CanadaRegulationsByQuantity_7_0(feature) {
@@ -999,7 +1034,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_CanadaCommercialElectricityRatekWh_8_0(feature) {
@@ -1113,7 +1148,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_CanadaCommercialWaterRate1000gallons_9_0(feature) {
@@ -1233,18 +1268,18 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_CanadaOutlineMap_10_0() {
             return {
                 pane: 'pane_CanadaOutlineMap_10',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fillOpacity: 0,
                 interactive: false,
             }
@@ -1262,7 +1297,12 @@
             style: style_CanadaOutlineMap_10_0,
         });
         bounds_group.addLayer(layer_CanadaOutlineMap_10);
-        map.addLayer(layer_CanadaOutlineMap_10);
+        // CanadaOutlineMap intentionally NOT auto-added — pane zIndex 410
+        // collides with pane_GlobalElectricity (also 410), which caused
+        // Canadian province borders to render twice and look heavier than the
+        // rest of the global choropleth. The active global layer already
+        // strokes provinces with the standardized border.
+        // map.addLayer(layer_CanadaOutlineMap_10);
         function pop_EuropeCompositeScore_11(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1289,7 +1329,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_EuropeCompositeScore_11_0(feature) {
@@ -1297,11 +1337,11 @@
                 return {
                 pane: 'pane_EuropeCompositeScore_11',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(247,252,245,0.60)',
@@ -1312,11 +1352,11 @@
                 return {
                 pane: 'pane_EuropeCompositeScore_11',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(123,199,124,0.60)',
@@ -1327,11 +1367,11 @@
                 return {
                 pane: 'pane_EuropeCompositeScore_11',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(0,68,27,0.60)',
@@ -1379,7 +1419,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_EuropeRegulationsByQuantity_12_0(feature) {
@@ -1389,11 +1429,11 @@
                 return {
                 pane: 'pane_EuropeRegulationsByQuantity_12',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(247,251,255,0.60)',
@@ -1404,11 +1444,11 @@
                 return {
                 pane: 'pane_EuropeRegulationsByQuantity_12',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(115,178,216,0.60)',
@@ -1419,11 +1459,11 @@
                 return {
                 pane: 'pane_EuropeRegulationsByQuantity_12',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(19,114,255,0.60)',
@@ -1471,7 +1511,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_EuropeCommercialElectricityRateskWh_13_0(feature) {
@@ -1479,11 +1519,11 @@
                 return {
                 pane: 'pane_EuropeCommercialElectricityRateskWh_13',
                 opacity: 1,
-                color: 'rgba(38,89,128,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(255,255,0,0.60)',
@@ -1494,11 +1534,11 @@
                 return {
                 pane: 'pane_EuropeCommercialElectricityRateskWh_13',
                 opacity: 1,
-                color: 'rgba(38,89,128,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(254,204,92,0.60)',
@@ -1509,11 +1549,11 @@
                 return {
                 pane: 'pane_EuropeCommercialElectricityRateskWh_13',
                 opacity: 1,
-                color: 'rgba(38,89,128,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(253,141,60,0.60)',
@@ -1524,11 +1564,11 @@
                 return {
                 pane: 'pane_EuropeCommercialElectricityRateskWh_13',
                 opacity: 1,
-                color: 'rgba(38,89,128,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(240,59,32,0.60)',
@@ -1539,11 +1579,11 @@
                 return {
                 pane: 'pane_EuropeCommercialElectricityRateskWh_13',
                 opacity: 1,
-                color: 'rgba(38,89,128,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(189,0,38,0.60)',
@@ -1590,7 +1630,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_EuropeCommercialWaterRates1000gallons_14_0(feature) {
@@ -1598,11 +1638,11 @@
                 return {
                 pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(171,171,171,0.60)',
@@ -1613,11 +1653,11 @@
                 return {
                 pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(200,220,240,0.60)',
@@ -1628,11 +1668,11 @@
                 return {
                 pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(115,178,216,0.60)',
@@ -1643,11 +1683,11 @@
                 return {
                 pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(41,121,185,0.60)',
@@ -1658,11 +1698,11 @@
                 return {
                 pane: 'pane_EuropeCommercialWaterRates1000gallons_14',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(8,48,107,0.60)',
@@ -1710,7 +1750,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_USCompositeScore_15_0(feature) {
@@ -1718,11 +1758,11 @@
                 return {
                 pane: 'pane_USCompositeScore_15',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(247,252,245,0.60)',
@@ -1733,11 +1773,11 @@
                 return {
                 pane: 'pane_USCompositeScore_15',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(123,199,124,0.60)',
@@ -1748,11 +1788,11 @@
                 return {
                 pane: 'pane_USCompositeScore_15',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(0,68,27,0.60)',
@@ -1799,7 +1839,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_USRegulationsByQuantity_16_0(feature) {
@@ -1809,11 +1849,11 @@
                 return {
                 pane: 'pane_USRegulationsByQuantity_16',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(247,251,255,0.60)',
@@ -1824,11 +1864,11 @@
                 return {
                 pane: 'pane_USRegulationsByQuantity_16',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(115,178,216,0.60)',
@@ -1839,11 +1879,11 @@
                 return {
                 pane: 'pane_USRegulationsByQuantity_16',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0,
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(0,103,255,0.60)',
@@ -1891,7 +1931,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_USCommercialElectricityRateskWh_17_0(feature) {
@@ -1899,11 +1939,11 @@
                 return {
                 pane: 'pane_USCommercialElectricityRateskWh_17',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(255,255,0,0.60)',
@@ -1914,11 +1954,11 @@
                 return {
                 pane: 'pane_USCommercialElectricityRateskWh_17',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(254,204,92,0.60)',
@@ -1929,11 +1969,11 @@
                 return {
                 pane: 'pane_USCommercialElectricityRateskWh_17',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(253,141,60,0.60)',
@@ -1944,11 +1984,11 @@
                 return {
                 pane: 'pane_USCommercialElectricityRateskWh_17',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(240,59,32,0.60)',
@@ -1959,11 +1999,11 @@
                 return {
                 pane: 'pane_USCommercialElectricityRateskWh_17',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(189,0,38,0.60)',
@@ -2010,7 +2050,7 @@
 			layer.on('popupopen', function(e) {
 				addClassToPopupIfMedia(content, e.popup);
 			});
-			layer.bindPopup(content, { maxHeight: 400 });
+			layer.bindPopup(content, { maxWidth: 360, maxHeight: 400, autoPan: true });
         }
 
         function style_USCommercialWaterRates1000gallons_18_0(feature) {
@@ -2018,11 +2058,11 @@
                 return {
                 pane: 'pane_USCommercialWaterRates1000gallons_18',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(185,185,185,0.60)',
@@ -2033,11 +2073,11 @@
                 return {
                 pane: 'pane_USCommercialWaterRates1000gallons_18',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(189,201,225,0.60)',
@@ -2048,11 +2088,11 @@
                 return {
                 pane: 'pane_USCommercialWaterRates1000gallons_18',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(115,178,216,0.60)',
@@ -2063,11 +2103,11 @@
                 return {
                 pane: 'pane_USCommercialWaterRates1000gallons_18',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(41,121,185,0.60)',
@@ -2078,11 +2118,11 @@
                 return {
                 pane: 'pane_USCommercialWaterRates1000gallons_18',
                 opacity: 1,
-                color: 'rgba(0,0,0,0.60)',
+                color: 'rgba(70,70,70,0.5)',
                 dashArray: '',
                 lineCap: 'butt',
                 lineJoin: 'miter',
-                weight: 1.0, 
+                weight: 0.5,
                 fill: true,
                 fillOpacity: 1,
                 fillColor: 'rgba(8,48,107,0.60)',
@@ -2115,7 +2155,7 @@
             if (p['State/Province'] || p['State Abv']) loc += ', ' + (p['State Abv'] || p['State/Province'] || '');
             if (p['Country'] && p['Country'] !== 'USA') loc += ', ' + p['Country'];
 
-            var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:260px;max-width:320px;">';
+            var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:280px;max-width:340px;">';
             html += '<div style="font-size:16px;font-weight:700;color:#1b285b;margin-bottom:4px;">' + (p['Name'] || '') + '</div>';
             html += '<div style="font-size:13px;color:#666;margin-bottom:2px;">' + loc + '</div>';
             html += '<div style="font-size:13px;color:#666;margin-bottom:8px;">' + (p['Operator'] || '') + '</div>';
@@ -2143,12 +2183,19 @@
                 || p['Europe Statistics_Regulations']
                 || p['Canada Statistics_Regulations']
                 || p['Brazil Commercial Electricity Rates (¢/kWh)_Brazil Statistics_Regulations'];
-            var regDisplay = 'None';
-            if (regs) {
-                var regCount = regs.split('\n').filter(function(r) { return r.trim(); }).length;
-                regDisplay = regCount + ' active';
+            var regList = regs
+                ? regs.split('\n').map(function(r) { return r.trim(); }).filter(Boolean)
+                : [];
+            var regSummary = regList.length ? regList.length + ' active' : 'None';
+            html += '<tr><td ' + td + '><b>Regulations</b></td><td ' + tdr + '>' + regSummary + '</td></tr>';
+            if (regList.length) {
+                var regHtml = '<ul style="margin:4px 0 4px 16px;padding:0;color:#444;font-size:12px;">';
+                regList.forEach(function(r) {
+                    regHtml += '<li style="margin:2px 0;">' + autolinker.link(r) + '</li>';
+                });
+                regHtml += '</ul>';
+                html += '<tr><td colspan="2" style="padding:0 0 4px 0;">' + regHtml + '</td></tr>';
             }
-            html += '<tr><td ' + td + '><b>Regulations</b></td><td ' + tdr + '>' + regDisplay + '</td></tr>';
 
             // --- Vigilent Analysis (always shown — all DCs are now scored) ---
             var score = p['composite_score'];
@@ -2158,7 +2205,6 @@
             html += '<tr><td ' + td + '><b>Classification</b></td><td ' + tdr + ' style="text-align:right;padding:3px 0;font-weight:600;color:' + scoreColor + ';">' + (p['vigilent_classification'] || 'N/A') + '</td></tr>';
             html += '<tr><td ' + td + '><b>Savings/MW</b></td><td ' + tdr + '>' + (p['savings_per_mw'] != null ? '$' + Number(p['savings_per_mw']).toLocaleString() : 'N/A') + '</td></tr>';
             html += '<tr><td ' + td + '><b>Payback</b></td><td ' + tdr + '>' + (p['payback_years'] != null ? p['payback_years'].toFixed(2) + ' yr' : 'N/A') + '</td></tr>';
-            html += '<tr><td ' + td + '><b>OPEX Impact</b></td><td ' + tdr + '>' + (p['impact_on_opex_pct'] != null ? p['impact_on_opex_pct'] + '%' : 'N/A') + '</td></tr>';
 
             // State/Province score — globally-normalized polygon composite
             if (p['state_province_composite'] != null) {
@@ -2169,16 +2215,18 @@
                 html += '<tr><td ' + td + '><b>' + (spLabel ? spLabel + ' Score' : 'State/Province Score') + '</b></td><td ' + tdr + '><span style="font-weight:600;color:' + spColor + ';">' + p['state_province_composite'].toFixed(1) + '</span>/100</td></tr>';
             }
 
-            // --- Environmental Impact section (where available) ---
-            if (p['ej_demographic_index'] != null) {
-                html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Impact</b></td></tr>';
-                html += '<tr><td ' + td + '><b>EJ Demo Index</b></td><td ' + tdr + '>' + p['ej_demographic_index'] + '</td></tr>';
-                html += '<tr><td ' + td + '><b>CO2 Avoided</b></td><td ' + tdr + '>' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons'].toFixed(0)).toLocaleString() + ' MT/yr' : 'N/A') + '</td></tr>';
-                html += '<tr><td ' + td + '><b>Energy Burden</b></td><td ' + tdr + '>' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : 'N/A') + '</td></tr>';
-            }
+            // --- Environmental Impact section (always rendered for consistency) ---
+            // CO2 is computed for every DC (eGRID for US, country-grid for non-US).
+            // EJ Demo Index + Energy Burden are US-only (EPA EJScreen) — show "—"
+            // outside the US so the row structure stays the same.
+            var isUS = (p['Country'] || '').toUpperCase() === 'USA' || p['ej_demographic_index'] != null;
+            html += '<tr><td colspan="2" style="padding:8px 0 4px 0;border-top:1px solid #eee;"><b style="color:#0097A7;">Environmental Impact</b></td></tr>';
+            html += '<tr><td ' + td + '><b>CO₂ Avoided</b></td><td ' + tdr + '>' + (p['co2_avoided_metric_tons'] != null ? Number(p['co2_avoided_metric_tons']).toLocaleString(undefined,{maximumFractionDigits:0}) + ' MT/yr' : 'N/A') + '</td></tr>';
+            html += '<tr><td ' + td + '><b>EJ Demo Index</b></td><td ' + tdr + '>' + (p['ej_demographic_index'] != null ? p['ej_demographic_index'] : (isUS ? 'N/A' : '— (US-only)')) + '</td></tr>';
+            html += '<tr><td ' + td + '><b>Energy Burden</b></td><td ' + tdr + '>' + (p['ej_energy_burden_pct'] != null ? p['ej_energy_burden_pct'] + '%' : (isUS ? 'N/A' : '— (US-only)')) + '</td></tr>';
 
             html += '</table></div>';
-            layer.bindPopup(html, { maxHeight: 400, maxWidth: 340 });
+            layer.bindPopup(html, { maxWidth: 360, maxHeight: 420, autoPan: true });
         }
 
         // Shared score-based marker style for all DC layers — circle radius and
@@ -2266,7 +2314,7 @@
             return function(feature) {
                 return {
                     pane: paneName, stroke: true,
-                    color: 'rgba(70,70,70,0.45)', weight: 0.4, opacity: 1,
+                    color: 'rgba(70,70,70,0.5)', weight: 0.5, opacity: 1,
                     // fillOpacity is multiplied with the rgba alpha in fillColor.
                     // Alpha=0.60 baked into fillColor; keep fillOpacity at 1 so
                     // effective polygon opacity is exactly 60%.
@@ -2292,16 +2340,33 @@
                 var regsStr = (p.regulations_count != null ? p.regulations_count + ' statutes' : 'N/A');
                 var compStr = (p.global_composite != null ? p.global_composite.toFixed(1) + '/100' : 'N/A');
 
-                var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:220px;">';
+                // Bullet list of actual regulations (rendered right below the
+                // Regulations count row so all statute info is grouped together).
+                var regsText = p.regulations_text || '';
+                var regItems = regsText.split('\n')
+                    .map(function(s){ return s.trim(); })
+                    .filter(Boolean);
+                var regListRow = '';
+                if (regItems.length) {
+                    var listHtml = '<ul style="margin:2px 0 4px 16px;padding:0;font-size:12px;color:#444;font-weight:normal;">';
+                    for (var i = 0; i < regItems.length; i++) {
+                        listHtml += '<li style="margin:1px 0;">' + autolinker.link(regItems[i]) + '</li>';
+                    }
+                    listHtml += '</ul>';
+                    regListRow = '<tr><td colspan="2" style="padding:0;">' + listHtml + '</td></tr>';
+                }
+
+                var html = '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-width:240px;">';
                 html += '<div style="font-weight:700;color:#1b285b;font-size:14px;">' + (p.Name||'') + '</div>';
                 html += '<div style="color:#666;font-size:12px;margin-bottom:6px;">' + (p.Region||'') + '</div>';
                 html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
                 html += row('electricity', 'Electricity', elecStr);
                 html += row('water',       'Water',       waterStr);
                 html += row('regulations', 'Regulations', regsStr);
+                html += regListRow;
                 html += row('composite',   'Global Composite', compStr);
                 html += '</table></div>';
-                layer.bindPopup(html, {maxHeight: 300});
+                layer.bindPopup(html, {maxWidth: 340, maxHeight: 360, autoPan: true});
             };
         }
 
@@ -2934,6 +2999,14 @@
 
             var SB_VAR = 'composite_score';
             var SB_DIR = 'desc';
+            var SB_QUERY = '';
+
+            function matchesQuery(p, q) {
+                if (!q) return true;
+                var hay = [p.Name, p.City, p['State/Province'], p.Country, p.Operator]
+                    .filter(Boolean).join(' ').toLowerCase();
+                return hay.indexOf(q) !== -1;
+            }
 
             function renderTable() {
                 var sorted = allDcs.slice().sort(function(a, b) {
@@ -2943,22 +3016,37 @@
                     if (vb == null) return -1;
                     return SB_DIR === 'desc' ? vb - va : va - vb;
                 });
-                var scored = sorted.filter(function(f){ return f.properties[SB_VAR] != null; });
-                document.getElementById('sb-count').textContent =
-                    scored.length + ' / ' + sorted.length + ' with a value';
+
+                // Rank labels are computed against the unfiltered sorted list so a
+                // searched DC keeps its global rank instead of restarting at 1.
+                var globalRank = {};
+                var scoredOrder = sorted.filter(function(f){ return f.properties[SB_VAR] != null; });
+                scoredOrder.forEach(function(f, i) { globalRank[f.properties._id] = i + 1; });
+
+                var q = SB_QUERY.trim().toLowerCase();
+                var visible = sorted.filter(function(f) { return matchesQuery(f.properties, q); });
+                var scoredVisible = visible.filter(function(f){ return f.properties[SB_VAR] != null; });
+
+                var countEl = document.getElementById('sb-count');
+                if (q) {
+                    countEl.textContent = visible.length + ' matched / ' + sorted.length + ' total';
+                } else {
+                    countEl.textContent = scoredVisible.length + ' / ' + sorted.length + ' with a value';
+                }
 
                 var tbody = document.querySelector('#sb-table tbody');
                 tbody.innerHTML = '';
                 var frag = document.createDocumentFragment();
-                sorted.forEach(function(f, i) {
+                visible.forEach(function(f) {
                     var p = f.properties;
                     var v = p[SB_VAR];
+                    var rank = globalRank[p._id];
                     var tr = document.createElement('tr');
                     tr.dataset.name = p.Name;
                     var loc = (p.City || '') + (p['State/Province'] ? ', ' + p['State/Province'] : '');
                     if (p.Country && p.Country !== 'USA') loc += ', ' + p.Country;
                     tr.innerHTML =
-                        '<td class="rank-num">' + (v == null ? '—' : (i + 1)) + '</td>'
+                        '<td class="rank-num">' + (rank == null ? '—' : rank) + '</td>'
                       + '<td><div><b>' + (p.Name || '') + '</b></div>'
                       + '<div class="meta">' + loc + '</div></td>'
                       + '<td class="value">' + valueFmt(SB_VAR, v) + '</td>';
@@ -3007,6 +3095,9 @@
             });
             document.getElementById('sb-dir').addEventListener('change', function(e) {
                 SB_DIR = e.target.value; renderTable();
+            });
+            document.getElementById('sb-search').addEventListener('input', function(e) {
+                SB_QUERY = e.target.value; renderTable();
             });
 
             // Collapse/expand toggle — also triggers map.invalidateSize so

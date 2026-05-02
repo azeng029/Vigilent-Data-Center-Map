@@ -16,11 +16,13 @@ from typing import Dict, Any, List, Tuple, Optional
 # ═══════════════════════════════════════════════════════════════════════════════
 
 SCORING_CONFIG = {
-    "savings_per_mw":    {"min": 0, "max": 300_000, "weight": 0.35},
-    "water_savings_pct": {"min": 0, "max": 0.08,    "weight": 0.10},
-    "impact_on_opex":    {"min": 0, "max": 0.10,    "weight": 0.20},
-    "payback_period":    {"min": 0, "max": 5.0,     "weight": 0.25},   # INVERTED
+    "savings_per_mw":    {"min": 0, "max": 300_000, "weight": 0.45},
+    "payback_period":    {"min": 0, "max": 5.0,     "weight": 0.30},   # INVERTED
+    "water_savings_pct": {"min": 0, "max": 0.08,    "weight": 0.15},
     "load_growth":       {"min": 0, "max": 0.15,    "weight": 0.10},
+    # impact_on_opex_pct still computed below as a reported metric, but no
+    # longer contributes to the composite — its signal was algebraically
+    # constant per operator tier and added noise instead of discrimination.
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -161,7 +163,6 @@ def compute_score(
     factor_scores = {
         "savings_per_mw":    _score(savings_per_mw, "savings_per_mw"),
         "water_savings_pct": _score(water_reduction_pct, "water_savings_pct"),
-        "impact_on_opex":    _score(impact_on_opex_pct, "impact_on_opex"),
         "payback_period":    _score_inv(payback_period, "payback_period"),
         "load_growth":       _score(load_growth_rate, "load_growth"),
     }
@@ -292,19 +293,16 @@ def compute_exhaustive_sweep(
     # Score each factor 0-100
     spm_max = cfg["savings_per_mw"]["max"]
     pp_max = cfg["payback_period"]["max"]
-    opex_max = cfg["impact_on_opex"]["max"]
     water_max = cfg["water_savings_pct"]["max"]
     growth_max = cfg["load_growth"]["max"]
 
     spm_score = np.clip(savings_per_mw / spm_max * 100, 0, 100)
     pp_score = np.clip((1 - payback / pp_max) * 100, 0, 100)
-    opex_score = np.clip(impact_on_opex / opex_max * 100, 0, 100)
     water_score = float(min(w_red / water_max * 100, 100))  # scalar
     growth_score = np.clip(G / growth_max * 100, 0, 100)
 
     composite = (spm_score * cfg["savings_per_mw"]["weight"]
                  + pp_score * cfg["payback_period"]["weight"]
-                 + opex_score * cfg["impact_on_opex"]["weight"]
                  + water_score * cfg["water_savings_pct"]["weight"]
                  + growth_score * cfg["load_growth"]["weight"])
 

@@ -132,8 +132,52 @@ CITY_ZIP_MAP = {
     "San Francisco": "94105",
 }
 
+# --- Country-level grid emission factors (kg CO2 / kWh, 2023 IEA / Ember) ---
+# Used as a fallback for non-US DCs so every data center reports a CO₂ Avoided
+# value. US DCs go through the eGRID-region path in compute_ej_impact() instead
+# of this table; the entries below are commercial-grid averages.
+COUNTRY_CO2_KG_PER_KWH = {
+    # Europe
+    "Norway": 0.020, "Sweden": 0.039, "France": 0.060, "Switzerland": 0.030,
+    "Iceland": 0.005, "Finland": 0.110, "Denmark": 0.180, "Belgium": 0.180,
+    "Austria": 0.150, "United Kingdom": 0.230, "Ireland": 0.300,
+    "Spain": 0.190, "Portugal": 0.180, "Italy": 0.260, "Netherlands": 0.330,
+    "The Netherlands": 0.330, "NEtherlands": 0.330,
+    "Germany": 0.380, "Czechia": 0.420, "Poland": 0.660, "Estonia": 0.700,
+    "Greece": 0.380, "Turkey": 0.420,
+    # Canada
+    "Canada": 0.120,    # national avg; province-level mix dominated by hydro
+    # Brazil
+    "Brazil": 0.095,    # hydro-heavy
+    # APAC
+    "India": 0.713, "Singapore": 0.408, "Thailand": 0.450,
+    "Indonesia": 0.700, "Malaysia": 0.555, "Vietnam": 0.480,
+    "Philippines": 0.600, "Australia": 0.520, "Japan": 0.470,
+    "South Korea": 0.450, "Taiwan": 0.560, "Hong Kong": 0.700,
+    "China": 0.582, "New Zealand": 0.140,
+}
+GLOBAL_CO2_KG_PER_KWH_FALLBACK = 0.475  # IEA world average
+
 # --- Score ALL DCs (set to None to score all, or a list of names to filter) ---
 SELECTED_DCS = None  # Score all data centers in the CSV
+
+
+def _fallback_co2_metric_tons(dc_size_mw, country):
+    """CO₂ avoided per year (metric tons) using country-level grid factor.
+
+    Mirrors the math in compute_ej_impact() — energy_saved_mwh × kg_per_kWh.
+    Returns None if size missing.
+    """
+    if dc_size_mw is None or dc_size_mw <= 0:
+        return None
+    kg_per_kwh = COUNTRY_CO2_KG_PER_KWH.get(
+        (country or "").strip(), GLOBAL_CO2_KG_PER_KWH_FALLBACK
+    )
+    total_kwh = (dc_size_mw * DEFAULTS["baseline_pue"] * 1000 * 8760
+                 * DEFAULTS["capacity_factor"]
+                 * (1 + DEFAULTS["load_growth_rate"]))
+    energy_saved_kwh = total_kwh * VIGILENT_PARAMS["energy_reduction_pct"]
+    return round((energy_saved_kwh * kg_per_kwh) / 1000, 1)  # kg → metric tons
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCORING PIPELINE
@@ -284,7 +328,8 @@ def score_datacenter(row):
         "missing_inputs_note": "baseline_pue & load_growth_rate from industry averages; energy_pct_opex from operator-tier benchmark; capacity_factor from Uptime Institute / IDC avg",
     }
 
-    # EJ impact
+    # EJ impact (US DCs get the full eGRID + EJScreen treatment;
+    # non-US DCs get a country-level CO₂ fallback so the popup is consistent)
     if ej_result:
         result["ej"] = {
             "zip_code": zip_code,
@@ -303,7 +348,11 @@ def score_datacenter(row):
             "people_of_color_pct": ej_result["people_of_color_pct"],
         }
     else:
-        result["ej"] = None
+        co2_mt = _fallback_co2_metric_tons(mw, country)
+        result["ej"] = {
+            "co2_avoided_metric_tons": co2_mt,
+            "co2_source": "country-level grid factor",
+        } if co2_mt is not None else None
 
     return result
 
@@ -515,8 +564,12 @@ def main():
             print(f"      Savings/MW: ${result['savings_per_mw']:,.0f} | Payback: {result['payback_years']:.2f} yr")
             if result.get("ej"):
                 ej = result["ej"]
-                print(f"      EJ: Demo Index {ej['demographic_index']} | "
-                      f"CO2 Avoided: {ej['co2_avoided_metric_tons']:,.0f} MT/yr")
+                if "demographic_index" in ej:
+                    print(f"      EJ: Demo Index {ej['demographic_index']} | "
+                          f"CO2 Avoided: {ej['co2_avoided_metric_tons']:,.0f} MT/yr")
+                else:
+                    print(f"      CO2 Avoided: {ej['co2_avoided_metric_tons']:,.0f} MT/yr "
+                          f"({ej.get('co2_source','')})")
         else:
             print(f"      SKIPPED (invalid MW value)")
 
